@@ -90,10 +90,8 @@ class UserServiceImplTest {
 
         Assertions.assertEquals(registerResponseDto,response);
     }
-
     @Test
     void registerFailureIfEmailAlreadyExists() {
-        //Arrange
         //Arrange
         RegisterRequestDto registerRequestDto = new RegisterRequestDto(
                 "youness", "dalal", "younessdalal@gmail.com", "dalalyouness1998",
@@ -105,7 +103,6 @@ class UserServiceImplTest {
         Assertions.assertThrows(EmailAlreadyExistsException.class,
                 ()-> userService.register(registerRequestDto)
                         ,"L'adresse email est déjà utilisée.");
-
 
     }
 
