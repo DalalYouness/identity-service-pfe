@@ -4,7 +4,6 @@ import com.dalal.identityservicepfe.enums.AccountStatus;
 import com.dalal.identityservicepfe.enums.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.collection.spi.PersistentSet;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -28,8 +27,10 @@ public class User {
     private String password;
     private String username;
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
     @Column(name = "created_at")
     private LocalDateTime creationAt;
@@ -44,6 +45,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    @Builder.Default
     private Set<Role> roles = new HashSet<>();
     //that's what happen when we use lazy fetch a proxy who implement the interface collections to
     //thanks to him, we save our memory from unused data

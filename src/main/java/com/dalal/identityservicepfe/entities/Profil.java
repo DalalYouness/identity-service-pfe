@@ -42,8 +42,6 @@ public abstract class Profil {
     private String city;
     private String country;
 
-    private String bio;
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
