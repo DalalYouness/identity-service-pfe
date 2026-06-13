@@ -116,4 +116,30 @@ public class UserControllerIntegrationTest {
                         .content(jsonObject))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
+
+    //Gender as an exemple of invalid format
+    @Test
+    public void failureRegistrationIfInvalidFormat() throws Exception {
+        // 1 - We cannot use the RegisterRequestDto object directly here because Java won't allow an invalid Enum value.
+        // Instead, we will write the raw JSON payload manually with an invalid gender value ("ROBOT").
+        String invalidJsonPayload = """
+                {
+                    "firstName": "Dalal",
+                    "lastName": "youness",
+                    "email": "dalal.youness@example.com",
+                    "password": "My_password1!",
+                    "phoneNumber": "0612345675",
+                    "birthDate": "2000-01-01",
+                    "gender": "ROBOT",
+                    "address": "123 Rue de la Marche Verte",
+                    "country": "Maroc",
+                    "city": "Casablanca"
+                }
+                """;
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJsonPayload))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+    //done Alhamdulilah 👌
 }
