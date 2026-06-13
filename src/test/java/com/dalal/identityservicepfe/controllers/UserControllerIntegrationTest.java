@@ -94,4 +94,26 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Conflict"))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.timestamp").exists());
     }
+
+    //password as exemple (for testing validation)
+    @Test
+    public void failureRegistrationIfPasswordIsWeak() throws Exception {
+        RegisterRequestDto setupRequest = new RegisterRequestDto(
+                "Dalal",
+                "PFE",
+                "dalal.youness@example.com",
+                "weak_password",
+                "0612345675",
+                LocalDate.of(2000, 1, 1),
+                Gender.MALE,
+                "123 Rue de la Marche Verte",
+                "Maroc",
+                "Casablanca"
+        );
+        String jsonObject = objectMapper.writeValueAsString(setupRequest);
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonObject))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
 }
