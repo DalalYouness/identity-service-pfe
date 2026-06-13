@@ -103,7 +103,6 @@ class UserServiceImplTest {
         Assertions.assertThrows(EmailAlreadyExistsException.class,
                 ()-> userService.register(registerRequestDto)
                         ,"L'adresse email est déjà utilisée.");
-
     }
 
 }
