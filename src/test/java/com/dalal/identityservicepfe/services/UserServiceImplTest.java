@@ -1,7 +1,7 @@
 package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterResponseDto;
+import com.dalal.identityservicepfe.dtos.AuthResponseDto;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -93,7 +93,7 @@ class UserServiceImplTest {
         var response = userService.register(registerRequestDto);
 
         String fullName = registerRequestDto.firstName() + " " + registerRequestDto.lastName();
-        RegisterResponseDto registerResponseDto = new RegisterResponseDto("my-token",mockUser.getEmail(),fullName,fullName + " enregistré avec succès.", Set.of(role),null);
+        AuthResponseDto registerResponseDto = new AuthResponseDto("my-token",mockUser.getEmail(),fullName,fullName + " enregistré avec succès.", Set.of(role),null);
 
         Assertions.assertEquals(registerResponseDto,response);
     }

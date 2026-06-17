@@ -1,7 +1,8 @@
 package com.dalal.identityservicepfe.services;
 
+import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterResponseDto;
+import com.dalal.identityservicepfe.dtos.AuthResponseDto;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -14,12 +15,17 @@ import com.dalal.identityservicepfe.repositories.UserRepository;
 import com.dalal.identityservicepfe.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ProfilRepository profilRepository;
@@ -27,13 +33,13 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
 
     @Value("${jwt.expiration}")
     private String expiresIn;
 
     @Override
-    @Transactional
-    public RegisterResponseDto register(RegisterRequestDto registerRequestDto) throws Exception {
+    public AuthResponseDto register(RegisterRequestDto registerRequestDto) throws Exception {
 
         //check if email already exist
         if(userRepository.existsByEmail(registerRequestDto.email())) {
@@ -54,16 +60,16 @@ public class UserServiceImpl implements UserService {
 
         //creating username
         String fullName = registerRequestDto.firstName() + " " + registerRequestDto.lastName();
-        user.setUsername(fullName);
+        user.setFullName(fullName);
 
         //saving data in database
         userRepository.save(user);
         profilRepository.save(clientProfil);
 
         //generate token
-        String token = jwtService.generateToken(fullName);
+        String token = jwtService.generateToken(user.getEmail());
 
-        return new RegisterResponseDto(
+        return new AuthResponseDto(
                 token,
                 user.getEmail(),
                 fullName,
@@ -71,6 +77,16 @@ public class UserServiceImpl implements UserService {
                 user.getRoles(),
                 expiresIn
         );
+    }
+
+    public AuthResponseDto login(LoginRequestDto loginRequestDto) throws Exception {
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequestDto.email(), loginRequestDto.password());
+        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+        User user = (User) authentication.getPrincipal();
+        String jwtToken = jwtService.generateToken(user.getEmail());
+
+        String fullName = user.getFullName();
+        return new AuthResponseDto(jwtToken,user.getEmail(),fullName,"Connexion réussie avec succès.",user.getRoles(),expiresIn);
     }
 
 

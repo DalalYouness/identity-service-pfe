@@ -30,6 +30,7 @@ public abstract class Profil {
     @Column(name = "birthdate")
     private LocalDate birthDate;
 
+    @Enumerated(EnumType.STRING)
     private Gender gender;
 
     @Column(name = "photo_url")

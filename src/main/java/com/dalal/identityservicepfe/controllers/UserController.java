@@ -1,7 +1,8 @@
 package com.dalal.identityservicepfe.controllers;
 
+import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterResponseDto;
+import com.dalal.identityservicepfe.dtos.AuthResponseDto;
 import com.dalal.identityservicepfe.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,13 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponseDto> register(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
-        RegisterResponseDto registerResponseDto = userService.register(registerRequestDto);
+    public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
+        AuthResponseDto registerResponseDto = userService.register(registerRequestDto);
         return new ResponseEntity<>(registerResponseDto, HttpStatus.CREATED);
+    }
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
+        AuthResponseDto response = userService.login(loginRequestDto);
+        return ResponseEntity.ok(response);
     }
 }
