@@ -87,6 +87,8 @@ public class UserServiceImpl implements UserService {
 
         String fullName = user.getFullName();
         return new AuthResponseDto(jwtToken,user.getEmail(),fullName,"Connexion réussie avec succès.",user.getRoles(),expiresIn);
+
+
     }
 
 

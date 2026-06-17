@@ -1,5 +1,6 @@
 package com.dalal.identityservicepfe.services;
 
+import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.AuthResponseDto;
 import com.dalal.identityservicepfe.entities.ClientProfil;
@@ -13,6 +14,7 @@ import com.dalal.identityservicepfe.repositories.ProfilRepository;
 import com.dalal.identityservicepfe.repositories.RoleRepository;
 import com.dalal.identityservicepfe.repositories.UserRepository;
 import com.dalal.identityservicepfe.security.JwtService;
+import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +22,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -39,17 +44,21 @@ class UserServiceImplTest {
     private  UserMapper userMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
-
     @Mock
     private JwtService jwtService;
+    @Mock
+    private AuthenticationManager authenticationManager;
 
     @InjectMocks
     private UserServiceImpl userService;
 
+    //***********
+    // registration
+    //***********
     //success test
     @Test
     void register() throws Exception {
-        //Arrange
+
         RegisterRequestDto registerRequestDto = new RegisterRequestDto(
                 "youness", "dalal", "younessdalal@gmail.com", "dalalyouness1998",
                 "0630524782", LocalDate.of(1998, Month.FEBRUARY, 27),
@@ -110,6 +119,46 @@ class UserServiceImplTest {
         Assertions.assertThrows(EmailAlreadyExistsException.class,
                 ()-> userService.register(registerRequestDto)
                         ,"L'adresse email est déjà utilisée.");
+    }
+
+
+    //***********
+    // login
+    //***********
+
+    @Test
+    public void loginSuccess() throws Exception {
+
+        LoginRequestDto loginRequestDto = new LoginRequestDto("sofiadouaa18@gmail.com", "sofiaDouaa@188");
+
+        User mockUser = User.builder()
+                .id(1L)
+                .email(loginRequestDto.email())
+                .password(loginRequestDto.password())
+                .fullName("youness dalal")
+                .roles(null)
+                .build();
+
+        Authentication mockAuthentication = Mockito.mock(Authentication.class);
+        Mockito.when(mockAuthentication.getPrincipal()).thenReturn(mockUser);
+
+        Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(mockAuthentication);
+
+        Mockito.when(jwtService.generateToken(mockUser.getEmail())).thenReturn("my-token");
+
+        var loginResponse = userService.login(loginRequestDto);
+
+        AuthResponseDto expectedResponse = new AuthResponseDto(
+                "my-token",
+                loginRequestDto.email(),
+                "youness dalal",
+                "Connexion réussie avec succès.",
+                null,
+                null
+        );
+
+        Assertions.assertEquals(expectedResponse, loginResponse);
     }
 
 }

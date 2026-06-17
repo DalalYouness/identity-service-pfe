@@ -25,7 +25,18 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(AbstractHttpConfigurer::disable)
+                // we used that config because spring security even if the user is not authenticated , he returns 403 instead of 401
+                .exceptionHandling(exception ->
+                        // for change config at the level of authentication exceptions we modifie authenticationEntryPoint
+                        exception.authenticationEntryPoint(
+                        (request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\": \"Identifiants invalides.\"}");
+                        }
+                ))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests.anyRequest().permitAll());
+
         return http.build();
     }
 
