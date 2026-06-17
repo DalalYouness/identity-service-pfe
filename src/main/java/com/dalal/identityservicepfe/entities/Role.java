@@ -20,3 +20,4 @@ public class Role {
     @Column(name = "role_name", length = 50, unique = true, nullable = false)
     private RoleName roleName;
 }
+//done Alhamdulilah 👌

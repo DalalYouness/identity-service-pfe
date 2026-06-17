@@ -12,6 +12,7 @@ import com.dalal.identityservicepfe.mappers.UserMapper;
 import com.dalal.identityservicepfe.repositories.ProfilRepository;
 import com.dalal.identityservicepfe.repositories.RoleRepository;
 import com.dalal.identityservicepfe.repositories.UserRepository;
+import com.dalal.identityservicepfe.security.JwtService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
@@ -37,12 +39,16 @@ class UserServiceImplTest {
     private  UserMapper userMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtService jwtService;
+
     @InjectMocks
     private UserServiceImpl userService;
 
     //success test
     @Test
-    void register() {
+    void register() throws Exception {
         //Arrange
         RegisterRequestDto registerRequestDto = new RegisterRequestDto(
                 "youness", "dalal", "younessdalal@gmail.com", "dalalyouness1998",
@@ -82,11 +88,12 @@ class UserServiceImplTest {
         Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(mockUser);
         Mockito.when(profilRepository.save(Mockito.any(ClientProfil.class))).thenReturn(mockProfil);
 
+        Mockito.when(jwtService.generateToken(Mockito.anyString())).thenReturn("my-token");
 
         var response = userService.register(registerRequestDto);
 
         String fullName = registerRequestDto.firstName() + " " + registerRequestDto.lastName();
-        RegisterResponseDto registerResponseDto = new RegisterResponseDto(null,fullName,fullName + " enregistré avec succès.");
+        RegisterResponseDto registerResponseDto = new RegisterResponseDto("my-token",mockUser.getEmail(),fullName,fullName + " enregistré avec succès.", Set.of(role),null);
 
         Assertions.assertEquals(registerResponseDto,response);
     }
