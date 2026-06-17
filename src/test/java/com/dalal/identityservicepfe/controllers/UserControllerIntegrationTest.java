@@ -55,7 +55,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.username").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
 
