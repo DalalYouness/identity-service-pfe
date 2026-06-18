@@ -183,7 +183,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().isCreated());
 
         // Step 2
-        LoginRequestDto loginRequest = new LoginRequestDto("dalal.dev2026@example.com", "SecurePassword1!");
+        LoginRequestDto loginRequest = new LoginRequestDto(registerRequest.email(), registerRequest.password());
         String loginJson = objectMapper.writeValueAsString(loginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
