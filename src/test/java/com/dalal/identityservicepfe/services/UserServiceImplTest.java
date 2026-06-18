@@ -23,8 +23,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -55,6 +57,7 @@ class UserServiceImplTest {
     //***********
     // registration
     //***********
+
     //success test
     @Test
     void register() throws Exception {
@@ -127,7 +130,7 @@ class UserServiceImplTest {
     //***********
 
     @Test
-    public void loginSuccess() throws Exception {
+    public void loginSuccess_ShouldReturnAuthResponseDto_WhenCredentialsAreValid() throws Exception {
 
         LoginRequestDto loginRequestDto = new LoginRequestDto("sofiadouaa18@gmail.com", "sofiaDouaa@188");
 
@@ -139,12 +142,12 @@ class UserServiceImplTest {
                 .roles(null)
                 .build();
 
+        // if we will use a mock just inside some methods it's enough to create it inside the methode directly
         Authentication mockAuthentication = Mockito.mock(Authentication.class);
-        Mockito.when(mockAuthentication.getPrincipal()).thenReturn(mockUser);
-
         Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(mockAuthentication);
 
+        Mockito.when(mockAuthentication.getPrincipal()).thenReturn(mockUser);
         Mockito.when(jwtService.generateToken(mockUser.getEmail())).thenReturn("my-token");
 
         var loginResponse = userService.login(loginRequestDto);
@@ -161,5 +164,15 @@ class UserServiceImplTest {
         Assertions.assertEquals(expectedResponse, loginResponse);
     }
 
+    @Test
+    public void loginFailure_ShouldThrowAuthenticationException_WhenCredentialsAreInvalid() {
+        LoginRequestDto loginRequestDto = new LoginRequestDto("sofiadouaa18@gmail.com", "sofiaDouaa@188");
+        Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+        Assertions.assertThrows(AuthenticationException.class , () -> userService.login(loginRequestDto));
+    }
+
 }
+
+
 
