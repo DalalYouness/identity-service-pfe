@@ -199,7 +199,18 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)));
     }
 
+    @Test
+    public void login_ShouldReturn400BadRequest_WhenInputDataIsInvalid() throws Exception {
 
+        LoginRequestDto loginRequest = new LoginRequestDto("", "");
+        String loginJson = objectMapper.writeValueAsString(loginRequest);
 
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
     //done Alhamdulilah 👌
 }
