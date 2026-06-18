@@ -184,6 +184,22 @@ public class UserControllerIntegrationTest {
 
     }
 
+    @Test
+    public void login_ShouldReturn401Unauthorized_WhenCredentialsAreInvalid() throws Exception {
+        LoginRequestDto loginRequest = new LoginRequestDto("dalal12@gmail.com", "myPassword123!");
+        String loginJson = objectMapper.writeValueAsString(loginRequest);
+
+        // Act & Assert
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)));
+    }
+
+
 
     //done Alhamdulilah 👌
 }
