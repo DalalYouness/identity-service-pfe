@@ -1,5 +1,6 @@
 package com.dalal.identityservicepfe.controllers;
 
+import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.enums.Gender;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +28,11 @@ public class UserControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    /*
+    * *******************
+    *   Registration
+    * *******************
+    * */
     @Test
     public void performRegisterUserSuccessfully() throws Exception {
         // 1 - Create a valid registration request object matching validation constraints
@@ -56,6 +62,7 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.roles").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
 
@@ -145,5 +152,38 @@ public class UserControllerIntegrationTest {
                         .content(invalidJsonPayload))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
+
+    /*
+     * *******************
+     *   login
+     * *******************
+     * */
+
+    @Test
+    public void login_ShouldReturnOKAndToken_WhenCredentialsAreValid() throws Exception {
+        // using password directly is pretty normale because we are just testing
+        LoginRequestDto loginRequest = new LoginRequestDto("dalal.dev2026@example.com"
+        ,"SecurePassword1!");
+
+        //converting the objet to a json
+        String loginJson = objectMapper.writeValueAsString(loginRequest);
+
+        //make a post request
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginJson)
+                .accept(MediaType.APPLICATION_JSON)
+        )  .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.roles").value(Matchers.notNullValue()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
+
+
+    }
+
+
     //done Alhamdulilah 👌
 }
