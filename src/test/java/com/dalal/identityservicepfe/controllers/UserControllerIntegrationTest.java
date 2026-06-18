@@ -161,27 +161,42 @@ public class UserControllerIntegrationTest {
 
     @Test
     public void login_ShouldReturnOKAndToken_WhenCredentialsAreValid() throws Exception {
-        // using password directly is pretty normale because we are just testing
-        LoginRequestDto loginRequest = new LoginRequestDto("dalal.dev2026@example.com"
-        ,"SecurePassword1!");
+       // step1 : avoiding the problems inside our pipelines we have to follow that process because the database there it doesn't have any information
+        RegisterRequestDto registerRequest = new RegisterRequestDto(
+                "Dalal",
+                "Dev",
+                "dalal.youness@gmail.com",
+                "SecurePassword1!",
+                "0612345675",
+                LocalDate.of(2000, 1, 1),
+                Gender.MALE,
+                "123 Rue de la Marche Verte",
+                "Maroc",
+                "Casablanca"
+        );
+        String registerJson = objectMapper.writeValueAsString(registerRequest);
 
-        //converting the objet to a json
+        //just check the status we don't have to enter to the details
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson))
+                .andExpect(MockMvcResultMatchers.status().isCreated());
+
+        // Step 2
+        LoginRequestDto loginRequest = new LoginRequestDto("dalal.dev2026@example.com", "SecurePassword1!");
         String loginJson = objectMapper.writeValueAsString(loginRequest);
 
-        //make a post request
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(loginJson)
-                .accept(MediaType.APPLICATION_JSON)
-        )  .andExpect(MockMvcResultMatchers.status().isOk())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                ).andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.roles").value(Matchers.notNullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
-
-
     }
 
     @Test
