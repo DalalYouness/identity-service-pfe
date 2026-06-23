@@ -1,7 +1,6 @@
 package com.dalal.identityservicepfe.controllers;
 
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
-import com.dalal.identityservicepfe.dtos.RecoveryPasswordRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.AuthResponseDto;
 import com.dalal.identityservicepfe.services.UserService;
