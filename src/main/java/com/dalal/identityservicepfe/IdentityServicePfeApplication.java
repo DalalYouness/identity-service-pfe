@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 public class IdentityServicePfeApplication {
 
 
-
     public static void main(String[] args) {
         System.out.println("========================================");
         System.out.println("Starting IdentityServicePfeApplication ✌✌😎");
