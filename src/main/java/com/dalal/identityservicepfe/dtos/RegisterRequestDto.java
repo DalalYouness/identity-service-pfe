@@ -21,7 +21,7 @@ public record RegisterRequestDto(
 
         @NotBlank(message = "Le mot de passe ne doit pas être vide")
         @Pattern(
-                regexp = "^(?=.*[0-8])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,30}$",
+                regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,30}$",
                 message = "Le mot de passe doit contenir entre 8 et 30 caractères, incluant une majuscule, une minuscule, un chiffre et un caractère spécial"
         )
         String password,

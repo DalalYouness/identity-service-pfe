@@ -3,15 +3,16 @@ package com.dalal.identityservicepfe.controllers;
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.AuthResponseDto;
+import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
+import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -20,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
-
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
         AuthResponseDto registerResponseDto = userService.register(registerRequestDto);
@@ -30,6 +30,12 @@ public class UserController {
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
         AuthResponseDto response = userService.login(loginRequestDto);
         return ResponseEntity.ok(response);
+    }
+    @PutMapping("/update-password")
+    public ResponseEntity<String> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
+        String username = userDetails.getUsername();
+        userService.updatePassword(updatePwdRequestDto,username);
+        return ResponseEntity.ok("Mot de passe modifié avec succès !");
     }
 
 }

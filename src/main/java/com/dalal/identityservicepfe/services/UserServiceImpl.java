@@ -3,11 +3,14 @@ package com.dalal.identityservicepfe.services;
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.AuthResponseDto;
+import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
+import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
+import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.mappers.UserMapper;
 import com.dalal.identityservicepfe.repositories.ProfilRepository;
 import com.dalal.identityservicepfe.repositories.RoleRepository;
@@ -91,7 +94,18 @@ public class UserServiceImpl implements UserService {
 
     }
 
-
+    @Override
+    public void updatePassword(UpdatePwdRequestDto updatePwdRequestDto, String email) {
+        User user = userRepository.findByEmail(email);
+       if(user == null) {
+           throw new UserNotFoundException("user non trouvé");
+       }
+       if(!passwordEncoder.matches(updatePwdRequestDto.oldPassword(),user.getPassword())) {
+           throw new InvalidPasswordException("Ancien mot de passe incorrect");
+       }
+        user.setPassword(passwordEncoder.encode(updatePwdRequestDto.newPassword()));
+        userRepository.save(user);
+    }
 
 
 }
