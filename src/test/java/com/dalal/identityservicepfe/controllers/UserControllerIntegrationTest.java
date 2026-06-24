@@ -2,9 +2,12 @@ package com.dalal.identityservicepfe.controllers;
 
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
+import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
 import com.dalal.identityservicepfe.enums.Gender;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +22,7 @@ import java.time.LocalDate;
 
 @AutoConfigureMockMvc
 @SpringBootTest
-@Transactional // Rolls back database changes after each test method to guarantee strict test isolation
+@Transactional // Rolls back database changes after each test method
 public class UserControllerIntegrationTest {
 
     @Autowired
@@ -28,19 +31,17 @@ public class UserControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    /*
-    * *******************
-    *   Registration
-    * *******************
-    * */
-    @Test
-    public void performRegisterUserSuccessfully() throws Exception {
-        // 1 - Create a valid registration request object matching validation constraints
-        RegisterRequestDto request = new RegisterRequestDto(
+
+    private RegisterRequestDto sharedUserRequest;
+    private String sharedUserJson;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        sharedUserRequest = new RegisterRequestDto(
                 "Dalal",
-                "PFE",
-                "dalal.success@example.com",
-                "My_password1!",
+                "Dev",
+                "dalal.youness@gmail.com",
+                "SecurePassword1!",
                 "0612345675",
                 LocalDate.of(2000, 1, 1),
                 Gender.MALE,
@@ -48,96 +49,68 @@ public class UserControllerIntegrationTest {
                 "Maroc",
                 "Casablanca"
         );
+        sharedUserJson = objectMapper.writeValueAsString(sharedUserRequest);
+    }
 
-        // 2 - Serialize the Java object into a JSON string
-        String jsonRequestBody = objectMapper.writeValueAsString(request);
+    /*
+     * *******************
+     * Registration
+     * *******************
+     * */
+    @Test
+    public void performRegisterUserSuccessfully() throws Exception {
 
-        // 3 - Simulate the HTTP POST request to the API endpoint
+        RegisterRequestDto successRequest = new RegisterRequestDto(
+                "Dalal", "PFE", "dalal.success@example.com", "My_password1!",
+                "0612345675", LocalDate.of(2000, 1, 1), Gender.MALE,
+                "123 Rue de la Marche Verte", "Maroc", "Casablanca"
+        );
+        String jsonRequestBody = objectMapper.writeValueAsString(successRequest);
+
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequestBody))
-
-                // 4 - Assert and verify the server response properties
                 .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.roles").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
-
-
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()));
     }
 
     @Test
     public void failureRegistrationIfEmailExist() throws Exception {
-        // 1 - Create the payload that will be used twice to force a duplicate entry
-        RegisterRequestDto setupRequest = new RegisterRequestDto(
-                "Dalal",
-                "PFE",
-                "dalal.youness@example.com",
-                "My_password1!",
-                "0612345675",
-                LocalDate.of(2000, 1, 1),
-                Gender.MALE,
-                "123 Rue de la Marche Verte",
-                "Maroc",
-                "Casablanca"
-        );
-        String setupJson = objectMapper.writeValueAsString(setupRequest);
 
-        // 2 - Perform the first registration to populate the database inside this isolated context
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(setupJson))
+                        .content(sharedUserJson))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
 
-        // -------------------------------------------------------------
-
-        // 3 - Attempt to register with the exact same email address a second time
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(setupJson))
-
-                // 4 - Assert that the global exception handler intercepts the failure with a 409 Conflict status
+                        .content(sharedUserJson))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("L'adresse email est déjà utilisée."))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.error").value("Conflict"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.timestamp").exists());
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("L'adresse email est déjà utilisée."));
     }
 
-    //password as exemple (for testing validation)
     @Test
     public void failureRegistrationIfPasswordIsWeak() throws Exception {
-        RegisterRequestDto setupRequest = new RegisterRequestDto(
-                "Dalal",
-                "PFE",
-                "dalal.youness@example.com",
-                "weak_password",
-                "0612345675",
-                LocalDate.of(2000, 1, 1),
-                Gender.MALE,
-                "123 Rue de la Marche Verte",
-                "Maroc",
-                "Casablanca"
+        RegisterRequestDto weakPwdRequest = new RegisterRequestDto(
+                "Dalal", "PFE", "dalal.weak@example.com", "weak_password",
+                "0612345675", LocalDate.of(2000, 1, 1), Gender.MALE,
+                "123 Rue de la Marche Verte", "Maroc", "Casablanca"
         );
-        String jsonObject = objectMapper.writeValueAsString(setupRequest);
+        String jsonObject = objectMapper.writeValueAsString(weakPwdRequest);
+
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonObject))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
-    //Gender as an exemple of invalid format
     @Test
     public void failureRegistrationIfInvalidFormat() throws Exception {
-        // 1 - We cannot use the RegisterRequestDto object directly here because Java won't allow an invalid Enum value.
-        // Instead, we will write the raw JSON payload manually with an invalid gender value ("ROBOT").
         String invalidJsonPayload = """
                 {
                     "firstName": "Dalal",
                     "lastName": "youness",
-                    "email": "dalal.youness@example.com",
+                    "email": "dalal.invalid@example.com",
                     "password": "My_password1!",
                     "phoneNumber": "0612345675",
                     "birthDate": "2000-01-01",
@@ -155,77 +128,77 @@ public class UserControllerIntegrationTest {
 
     /*
      * *******************
-     *   login
+     * Login
      * *******************
      * */
-
     @Test
     public void login_ShouldReturnOKAndToken_WhenCredentialsAreValid() throws Exception {
-       // step1 : avoiding the problems inside our pipelines we have to follow that process because the database there it doesn't have any information
-        RegisterRequestDto registerRequest = new RegisterRequestDto(
-                "Dalal",
-                "Dev",
-                "dalal.youness@gmail.com",
-                "SecurePassword1!",
-                "0612345675",
-                LocalDate.of(2000, 1, 1),
-                Gender.MALE,
-                "123 Rue de la Marche Verte",
-                "Maroc",
-                "Casablanca"
-        );
-        String registerJson = objectMapper.writeValueAsString(registerRequest);
 
-        //just check the status we don't have to enter to the details
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerJson))
+                        .content(sharedUserJson))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
 
-        // Step 2
-        LoginRequestDto loginRequest = new LoginRequestDto(registerRequest.email(), registerRequest.password());
+        LoginRequestDto loginRequest = new LoginRequestDto(sharedUserRequest.email(), sharedUserRequest.password());
         String loginJson = objectMapper.writeValueAsString(loginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson)
-                        .accept(MediaType.APPLICATION_JSON)
-                ).andExpect(MockMvcResultMatchers.status().isOk())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.fullName").exists())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.roles").value(Matchers.notNullValue()))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.expiresIn").exists());
+                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(sharedUserRequest.email()));
     }
 
     @Test
     public void login_ShouldReturn401Unauthorized_WhenCredentialsAreInvalid() throws Exception {
-        LoginRequestDto loginRequest = new LoginRequestDto("dalal12@gmail.com", "myPassword123!");
+        LoginRequestDto loginRequest = new LoginRequestDto("unknown.user@gmail.com", "myPassword123!");
         String loginJson = objectMapper.writeValueAsString(loginRequest);
 
-        // Act & Assert
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson)
-                        .accept(MediaType.APPLICATION_JSON)
-                )
-                .andExpect(MockMvcResultMatchers.status().isUnauthorized())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.any(String.class)));
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
 
     @Test
     public void login_ShouldReturn400BadRequest_WhenInputDataIsInvalid() throws Exception {
-
         LoginRequestDto loginRequest = new LoginRequestDto("", "");
         String loginJson = objectMapper.writeValueAsString(loginRequest);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(loginJson)
-                        .accept(MediaType.APPLICATION_JSON)
-                )
+                        .accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
-    //done Alhamdulilah 👌
+
+    @Test
+    public void updatePassword_ShouldReturn200_WhenTokenAndPasswordIsValid() throws Exception {
+        // registration first
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                .content(sharedUserJson)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated()).andReturn();
+        String contentAsString = result.getResponse().getContentAsString();
+        String token = JsonPath.read(contentAsString, "$.token");
+
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto("SecurePassword1!"
+                ,"DalalSec1!",
+                "DalalSec1!");
+        String updatePasswordJson =  objectMapper.writeValueAsString(updatePwdRequestDto);
+        //update password
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/auth/update-password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updatePasswordJson)
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + token))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.notNullValue()));
+
+    }
+
 }

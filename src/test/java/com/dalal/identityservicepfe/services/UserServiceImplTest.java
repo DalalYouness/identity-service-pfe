@@ -11,6 +11,7 @@ import com.dalal.identityservicepfe.enums.Gender;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
 import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
+import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.mappers.UserMapper;
 import com.dalal.identityservicepfe.repositories.ProfilRepository;
 import com.dalal.identityservicepfe.repositories.RoleRepository;
@@ -212,6 +213,24 @@ class UserServiceImplTest {
         // it's necessary to verify that mock userRepository never call the save methode
         Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
 
+    }
+
+    @Test
+    public void updatePasswordFailure_ShouldThrowUserNotFoundException_WhenUserDoesNotExist() {
+
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto("Dalal_1998!", "Youness@98", "Youness@98");
+        String email = "unknown_user@gmail.com";
+
+        Mockito.when(userRepository.findByEmail(email)).thenReturn(null);
+
+        UserNotFoundException exception = Assertions.assertThrows(UserNotFoundException.class, () -> {
+            userService.updatePassword(updatePwdRequestDto, email);
+        });
+
+        Assertions.assertEquals("user non trouvé", exception.getMessage());
+
+        Mockito.verifyNoInteractions(passwordEncoder);
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
     }
 
 }
