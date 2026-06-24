@@ -97,13 +97,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updatePassword(UpdatePwdRequestDto updatePwdRequestDto, String email) {
+        if (!updatePwdRequestDto.newPassword().equals(updatePwdRequestDto.confirmPassword())) {
+            throw new IllegalArgumentException("Le nouveau mot de passe et sa confirmation ne correspondent pas.");
+        }
+
         User user = userRepository.findByEmail(email);
-       if(user == null) {
-           throw new UserNotFoundException("user non trouvé");
-       }
-       if(!passwordEncoder.matches(updatePwdRequestDto.oldPassword(),user.getPassword())) {
-           throw new InvalidPasswordException("Ancien mot de passe incorrect");
-       }
+        if (user == null) {
+            throw new UserNotFoundException("user non trouvé");
+        }
+
+        if (!passwordEncoder.matches(updatePwdRequestDto.oldPassword(), user.getPassword())) {
+            throw new InvalidPasswordException("Ancien mot de passe incorrect");
+        }
+
         user.setPassword(passwordEncoder.encode(updatePwdRequestDto.newPassword()));
         userRepository.save(user);
     }

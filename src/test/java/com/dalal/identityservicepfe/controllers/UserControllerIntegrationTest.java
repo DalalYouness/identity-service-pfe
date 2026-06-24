@@ -175,6 +175,11 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().isBadRequest());
     }
 
+    /*
+    * *****************
+    * update password
+    * *****************
+    * */
     @Test
     public void updatePassword_ShouldReturn200_WhenTokenAndPasswordIsValid() throws Exception {
         // registration first
@@ -229,6 +234,36 @@ public class UserControllerIntegrationTest {
 
 
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.notNullValue()));
+    }
+
+    @Test
+    public void updatePassword_ShouldReturn400_WhenNewPasswordAndConfirmPasswordDoNotMatch() throws Exception {
+
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String contentAsString = result.getResponse().getContentAsString();
+        String token = JsonPath.read(contentAsString, "$.token");
+
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto(
+                "SecurePassword1!",
+                "DalalSec_1!",
+                "MismatchedPassword123!"
+        );
+        String updatePasswordJson = objectMapper.writeValueAsString(updatePwdRequestDto);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/auth/update-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePasswordJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.notNullValue()));
     }
 

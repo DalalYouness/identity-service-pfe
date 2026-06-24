@@ -233,6 +233,29 @@ class UserServiceImplTest {
         Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
     }
 
+    @Test
+    public void updatePasswordFailure_ShouldThrowIllegalArgumentException_WhenNewPasswordAndConfirmPasswordDoNotMatch() {
+
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto(
+                "Dalal_1998!",
+                "Youness@98",
+                "DifferentPassword123!"
+        );
+        String email = "younessdalal1@gmail.com";
+
+
+        IllegalArgumentException exception = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> userService.updatePassword(updatePwdRequestDto, email)
+        );
+
+
+        Assertions.assertEquals("Le nouveau mot de passe et sa confirmation ne correspondent pas.", exception.getMessage());
+
+        Mockito.verifyNoInteractions(userRepository);
+        Mockito.verifyNoInteractions(passwordEncoder);
+    }
+
 
 }
 
