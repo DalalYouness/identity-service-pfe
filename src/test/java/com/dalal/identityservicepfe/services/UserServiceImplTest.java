@@ -10,6 +10,7 @@ import com.dalal.identityservicepfe.entities.User;
 import com.dalal.identityservicepfe.enums.Gender;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
+import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
 import com.dalal.identityservicepfe.mappers.UserMapper;
 import com.dalal.identityservicepfe.repositories.ProfilRepository;
 import com.dalal.identityservicepfe.repositories.RoleRepository;
@@ -19,6 +20,7 @@ import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -190,6 +192,26 @@ class UserServiceImplTest {
         Assertions.assertEquals("new_hashed_password",user.getPassword());
 
         Mockito.verify(userRepository, Mockito.times(1)).save(user);
+    }
+
+    @Test
+    public void updatePasswordFailure_ShouldThrowInvalidPasswordException_WhenOldPasswordIsInvalid() {
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto("Dalal_1998!","Youness@98","Youness@98");
+        String email = "younessdalal1@gmail.com";
+        User user = User.builder().email("younessdalal1@gmail.com").password("hashed_password").build();
+
+        Mockito.when(userRepository.findByEmail(email)).thenReturn(user);
+        Mockito.when(passwordEncoder.matches(updatePwdRequestDto.oldPassword(), user.getPassword())).thenReturn(false);
+
+
+        /* for info
+        the message in that methode is not the exception message, but it's the message who will be displayed in the console if the test not passed so the correct alg is that
+        Assertions.assertThrows(InvalidPasswordException.class,() -> userService.updatePassword(updatePwdRequestDto,email),"Ancien mot de pwd incorrect");*/
+        InvalidPasswordException invalidPasswordException = Assertions.assertThrows(InvalidPasswordException.class,() -> userService.updatePassword(updatePwdRequestDto, email));
+        Assertions.assertEquals("Ancien mot de passe incorrect", invalidPasswordException.getMessage());
+        // it's necessary to verify that mock userRepository never call the save methode
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
+
     }
 
 }
