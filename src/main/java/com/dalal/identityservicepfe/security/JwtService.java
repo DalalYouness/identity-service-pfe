@@ -33,12 +33,13 @@ public class JwtService {
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setSubject(subject)
-                .signWith(getPrivateKeyFromString(), SignatureAlgorithm.RS256)
+                .signWith(getPrivateKeyFromString(), SignatureAlgorithm.RS256) // 👈 تأكد من استخدام RS256
                 .compact();
     }
 
     private PrivateKey getPrivateKeyFromString() throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(privateKeyString);
+
+        byte[] decodedKey = Base64.getDecoder().decode(privateKeyString.trim());
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePrivate(keySpec);
@@ -64,14 +65,15 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) throws Exception {
         return Jwts.parserBuilder()
-                .setSigningKey(getPublicKeyFromString()) // Utilisation de la clé publique pour décoder
+                .setSigningKey(getPublicKeyFromString())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
     private PublicKey getPublicKeyFromString() throws Exception {
-        byte[] decodedKey = Base64.getDecoder().decode(publicKeyString);
+
+        byte[] decodedKey = Base64.getDecoder().decode(publicKeyString.trim());
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         return keyFactory.generatePublic(keySpec);

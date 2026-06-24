@@ -10,9 +10,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -32,10 +35,11 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     @PutMapping("/update-password")
-    public ResponseEntity<String> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
+    @PreAuthorize("isAuthenticated()") //any role is accepted just hhe have to be authenticated
+    public ResponseEntity<Map<String,String>> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
         String username = userDetails.getUsername();
         userService.updatePassword(updatePwdRequestDto,username);
-        return ResponseEntity.ok("Mot de passe modifié avec succès !");
+        return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès !"));
     }
 
 }

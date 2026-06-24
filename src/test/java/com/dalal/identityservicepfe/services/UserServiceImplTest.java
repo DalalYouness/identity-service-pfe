@@ -3,6 +3,7 @@ package com.dalal.identityservicepfe.services;
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.AuthResponseDto;
+import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -170,6 +171,25 @@ class UserServiceImplTest {
         Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class)))
                 .thenThrow(new BadCredentialsException("Bad credentials"));
         Assertions.assertThrows(AuthenticationException.class , () -> userService.login(loginRequestDto));
+    }
+
+    @Test
+    public void updatePasswordSuccess() {
+
+        UpdatePwdRequestDto updatePwdRequestDto = new UpdatePwdRequestDto("Dalal_1998!","Youness@98","Youness@98");
+        String email = "younessdalal1@gmail.com";
+        User user = User.builder().email("younessdalal1@gmail.com").password("hashed_password").build();
+
+        Mockito.when(userRepository.findByEmail(email)).thenReturn(user);
+        Mockito.when(passwordEncoder.matches(updatePwdRequestDto.oldPassword(), user.getPassword())).thenReturn(true);
+        Mockito.when(passwordEncoder.encode(updatePwdRequestDto.newPassword())).thenReturn("new_hashed_password");
+        Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
+
+        userService.updatePassword(updatePwdRequestDto,email);
+
+        Assertions.assertEquals("new_hashed_password",user.getPassword());
+
+        Mockito.verify(userRepository, Mockito.times(1)).save(user);
     }
 
 }

@@ -38,6 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+        System.out.println("jwt send: " + jwt);
 
         try {
 
@@ -58,6 +59,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
+
             logger.error("Impossible d'établir l'authentification JWT", e);
         }
 

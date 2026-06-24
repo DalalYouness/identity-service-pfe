@@ -1,6 +1,8 @@
 package com.dalal.identityservicepfe.handler;
 
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
+import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
+import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,4 +62,19 @@ public class GlobalExceptionHandler {
         body.put("message", message);
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String,Object>> handleUserNotFoundException(UserNotFoundException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Map<String , Object>> handleInvalidPasswordException(InvalidPasswordException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 }
+

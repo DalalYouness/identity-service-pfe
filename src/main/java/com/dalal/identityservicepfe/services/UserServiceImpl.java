@@ -87,6 +87,7 @@ public class UserServiceImpl implements UserService {
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
         User user = (User) authentication.getPrincipal();
         String jwtToken = jwtService.generateToken(user.getEmail());
+        System.out.println("generated token in login : " + jwtToken );
 
         String fullName = user.getFullName();
         return new AuthResponseDto(jwtToken,user.getEmail(),fullName,"Connexion réussie avec succès.",user.getRoles(),expiresIn);
