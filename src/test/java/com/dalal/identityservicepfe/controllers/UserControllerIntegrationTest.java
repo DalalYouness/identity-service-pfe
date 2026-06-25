@@ -271,10 +271,91 @@ public class UserControllerIntegrationTest {
     }
 
     /*
-    * *************************
-    * change email
-    * *************************
-    * */
+     * *************************
+     * change email
+     * *************************
+     * */
 
+    @Test
+    public void changeEmail_ShouldReturnOKAndNewToken_WhenDataIsValid() throws Exception {
+
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String contentAsString = result.getResponse().getContentAsString();
+        String token = JsonPath.read(contentAsString, "$.token");
+
+        ChangeEmailRequestDto changeEmailDto = new ChangeEmailRequestDto(
+                "dalal.new.email@gmail.com",
+                "SecurePassword1!"
+        );
+        String changeEmailJson = objectMapper.writeValueAsString(changeEmailDto);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/auth/change-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(changeEmailJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()));
+    }
+
+    @Test
+    public void changeEmail_ShouldReturnBadRequest_WhenPasswordIsIncorrect() throws Exception {
+
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String contentAsString = result.getResponse().getContentAsString();
+        String token = JsonPath.read(contentAsString, "$.token");
+
+        ChangeEmailRequestDto changeEmailDto = new ChangeEmailRequestDto(
+                "dalal.new.email@gmail.com",
+                "WrongPassword123!"
+        );
+        String changeEmailJson = objectMapper.writeValueAsString(changeEmailDto);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/auth/change-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(changeEmailJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest());
+    }
+
+    @Test
+    public void changeEmail_ShouldReturnBadRequest_WhenNewEmailAlreadyExists() throws Exception {
+
+        var resultUser = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String tokenUser = JsonPath.read(resultUser.getResponse().getContentAsString(), "$.token");
+
+        ChangeEmailRequestDto changeEmailDto = new ChangeEmailRequestDto(
+                "dalal.youness@gmail.com",
+                "SecurePassword1!"
+        );
+        String changeEmailJson = objectMapper.writeValueAsString(changeEmailDto);
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/auth/change-email")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(changeEmailJson)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + tokenUser))
+                .andExpect(MockMvcResultMatchers.status().isConflict());
+    }
 
 }
