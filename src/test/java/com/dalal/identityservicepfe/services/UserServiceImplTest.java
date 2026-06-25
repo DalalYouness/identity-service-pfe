@@ -1,9 +1,6 @@
 package com.dalal.identityservicepfe.services;
 
-import com.dalal.identityservicepfe.dtos.LoginRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.AuthResponseDto;
-import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
+import com.dalal.identityservicepfe.dtos.*;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -35,6 +32,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.Map;
 import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
@@ -262,6 +260,88 @@ class UserServiceImplTest {
         Mockito.verifyNoInteractions(passwordEncoder);
     }
 
+    /*
+    * change email
+    * */
+
+    @Test
+    void changeEmail_Success() throws Exception{
+        // 1. Arrange
+        User user = new User();
+        user.setEmail("ahmed@email.com");
+        user.setPassword("encoded_password");
+        ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "my_current_password");
+
+        Mockito.when(userRepository.findByEmail("ahmed@email.com")).thenReturn(user);
+        Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(false);
+        Mockito.when(passwordEncoder.matches("my_current_password", "encoded_password")).thenReturn(true);
+        Mockito.when(jwtService.generateToken("new@email.com")).thenReturn("mocked_jwt_token");
+
+        // 2. Act
+        Map<String, String> response = userService.changeEmail(requestDto, "ahmed@email.com");
+
+        // 3. Assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals("mocked_jwt_token", response.get("token"));
+        Assertions.assertEquals("new@email.com", user.getEmail());
+        Mockito.verify(userRepository, Mockito.times(1)).save(user);
+    }
+
+    @Test
+    void changeEmail_UserNotFound() {
+        // 1. Arrange
+        ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "current_password");
+        Mockito.when(userRepository.findByEmail("old@email.com")).thenReturn(null);
+
+        // 2. Act & 3. Assert
+        Assertions.assertThrows(UserNotFoundException.class, () ->
+                userService.changeEmail(requestDto, "old@email.com")
+        );
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
+    }
+
+    @Test
+    void changeEmail_EmailAlreadyExists() throws Exception {
+        // 1. Arrange
+        User user = new User();
+        user.setEmail("old@email.com");
+        ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "raw_password");
+
+        Mockito.when(userRepository.findByEmail("old@email.com")).thenReturn(user);
+        Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(true);
+
+        // 2. Act & 3. Assert
+        Assertions.assertThrows(EmailAlreadyExistsException.class, () ->
+                userService.changeEmail(requestDto, "old@email.com")
+        );
+        Mockito.verify(userRepository, Mockito.never())
+                .save(Mockito.any(User.class));
+
+        Mockito.verify(jwtService, Mockito.never())
+                .generateToken(Mockito.anyString());
+    }
+
+    @Test
+    void changeEmail_InvalidPassword() throws Exception {
+        // 1. Arrange
+        User user = new User();
+        user.setEmail("old@email.com");
+        user.setPassword("encoded_password");
+        ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "raw_password");
+
+        Mockito.when(userRepository.findByEmail("old@email.com")).thenReturn(user);
+        Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(false);
+        Mockito.when(passwordEncoder.matches("raw_password", "encoded_password")).thenReturn(false);
+
+        // 2. Act & 3. Assert
+        Assertions.assertThrows(InvalidPasswordException.class, () ->
+                userService.changeEmail(requestDto, "old@email.com")
+        );
+
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
+        Mockito.verify(jwtService, Mockito.never()).generateToken(Mockito.anyString());
+
+    }
 
 }
 

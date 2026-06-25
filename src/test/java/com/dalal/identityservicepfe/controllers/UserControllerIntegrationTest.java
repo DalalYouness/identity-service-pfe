@@ -1,8 +1,10 @@
 package com.dalal.identityservicepfe.controllers;
 
+import com.dalal.identityservicepfe.dtos.ChangeEmailRequestDto;
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
+import com.dalal.identityservicepfe.entities.User;
 import com.dalal.identityservicepfe.enums.Gender;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -19,6 +21,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -266,5 +269,12 @@ public class UserControllerIntegrationTest {
 
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value(Matchers.notNullValue()));
     }
+
+    /*
+    * *************************
+    * change email
+    * *************************
+    * */
+
 
 }
