@@ -1,9 +1,6 @@
 package com.dalal.identityservicepfe.controllers;
 
-import com.dalal.identityservicepfe.dtos.LoginRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.AuthResponseDto;
-import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
+import com.dalal.identityservicepfe.dtos.*;
 import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.services.UserService;
 import jakarta.validation.Valid;
@@ -35,11 +32,16 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     @PutMapping("/update-password")
-    @PreAuthorize("isAuthenticated()") //any role is accepted just hhe have to be authenticated
     public ResponseEntity<Map<String,String>> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
         String username = userDetails.getUsername();
         userService.updatePassword(updatePwdRequestDto,username);
         return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès !"));
     }
 
+    @PutMapping("/change-email")
+    public ResponseEntity<Map<String,String>> changeEmail(@RequestBody @Valid ChangeEmailRequestDto  changeEmailRequestDto, @AuthenticationPrincipal UserDetails userDetails) throws Exception {
+        String email = userDetails.getUsername(); // the username = email in my case
+        Map<String, String> response = userService.changeEmail(changeEmailRequestDto, email);
+        return ResponseEntity.ok(response);
+    }
 }

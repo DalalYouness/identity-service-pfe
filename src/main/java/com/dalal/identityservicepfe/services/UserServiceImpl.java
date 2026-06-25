@@ -1,9 +1,6 @@
 package com.dalal.identityservicepfe.services;
 
-import com.dalal.identityservicepfe.dtos.LoginRequestDto;
-import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.AuthResponseDto;
-import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
+import com.dalal.identityservicepfe.dtos.*;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -24,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 
 @Service
@@ -112,6 +111,33 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(updatePwdRequestDto.newPassword()));
         userRepository.save(user);
+    }
+
+    // TODO:
+    // 1. Remove checked exception (throws Exception)
+    // 2. Add email verification for email change
+    // 3. Add email verification during registration
+    @Override
+    public Map<String, String> changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception { // 👈 حيدنا throws Exception
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UserNotFoundException("user non trouvé");
+        }
+
+        if (userRepository.existsByEmail(changeEmailRequestDto.newEmail())) {
+            throw new EmailAlreadyExistsException("Veuillez saisir une adresse email valide et disponible.");
+        }
+
+        if(!passwordEncoder.matches(changeEmailRequestDto.currentPassword(), user.getPassword())) {
+            throw new InvalidPasswordException("Le mot de passe est incorrect.");
+        }
+
+        String newEmail = changeEmailRequestDto.newEmail();
+        user.setEmail(newEmail);
+        userRepository.save(user);
+
+        String newJwtToken = jwtService.generateToken(newEmail);
+        return Map.of("token", newJwtToken);
     }
 
 

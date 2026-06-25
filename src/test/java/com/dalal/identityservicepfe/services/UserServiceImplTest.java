@@ -176,6 +176,12 @@ class UserServiceImplTest {
         Assertions.assertThrows(AuthenticationException.class , () -> userService.login(loginRequestDto));
     }
 
+    /*
+    * ***************
+    * update password
+    * ****************
+    * */
+
     @Test
     public void updatePasswordSuccess() {
 
