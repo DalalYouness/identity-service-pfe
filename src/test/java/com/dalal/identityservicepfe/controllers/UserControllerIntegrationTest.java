@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -356,6 +357,11 @@ public class UserControllerIntegrationTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + tokenUser))
                 .andExpect(MockMvcResultMatchers.status().isConflict());
+    }
+
+    @DeleteMapping("/delete-compte")
+    public void deleteCompte() {
+
     }
 
 }

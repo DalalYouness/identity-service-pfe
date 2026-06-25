@@ -140,5 +140,14 @@ public class UserServiceImpl implements UserService {
         return Map.of("token", newJwtToken);
     }
 
+    @Override
+    public void deleteAccount(String email) {
+        User user = userRepository.findByEmail(email);
+        if(user == null) {
+            throw new UserNotFoundException("user non trouvé");
+        }
+        userRepository.delete(user);
+    }
+
 
 }

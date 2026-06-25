@@ -44,4 +44,10 @@ public class UserController {
         Map<String, String> response = userService.changeEmail(changeEmailRequestDto, email);
         return ResponseEntity.ok(response);
     }
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<?> deleteAccountByEmail(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        userService.deleteAccount(email);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
 }
