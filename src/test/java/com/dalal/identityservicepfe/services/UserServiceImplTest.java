@@ -343,6 +343,24 @@ class UserServiceImplTest {
 
     }
 
+    /*
+    * *********************
+    * delete user by email
+    * *********************
+    * */
+
+    @Test
+    void deleteAccount_Success() {
+
+        User user = new User();
+        user.setEmail("dalal.yns@gmail.com");
+
+        Mockito.when(userRepository.findByEmail("dalal.yns@gmail.com")).thenReturn(user);
+
+        userService.deleteAccount("dalal.yns@gmail.com");
+
+        Mockito.verify(userRepository, Mockito.times(1)).delete(user);
+    }
 }
 
 
