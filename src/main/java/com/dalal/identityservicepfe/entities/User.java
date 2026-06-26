@@ -30,16 +30,21 @@ public class User implements UserDetails{
 
     private String email;
     private String password;
+
     @Column(name = "full_name")
     private String fullName;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
+
     @Column(name = "created_at")
     private LocalDateTime creationAt;
+
     @Column(name = "updated_at")
     private LocalDateTime updateAt;
 

@@ -50,4 +50,11 @@ public class UserController {
         userService.deleteAccount(email);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    @PostMapping("/add-administrator")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AuthResponseDto> addAdministrator(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
+        AuthResponseDto registerResponseDto = userService.addAdministrator(registerRequestDto);
+        return new ResponseEntity<>(registerResponseDto, HttpStatus.CREATED);
+    }
 }

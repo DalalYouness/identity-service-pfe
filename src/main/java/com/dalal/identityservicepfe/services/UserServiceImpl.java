@@ -1,9 +1,7 @@
 package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.dtos.*;
-import com.dalal.identityservicepfe.entities.ClientProfil;
-import com.dalal.identityservicepfe.entities.Role;
-import com.dalal.identityservicepfe.entities.User;
+import com.dalal.identityservicepfe.entities.*;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
 import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
@@ -22,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.management.relation.RoleNotFoundException;
 import java.util.Map;
 
 
@@ -57,6 +56,9 @@ public class UserServiceImpl implements UserService {
 
         //setting relationnel data
         Role role = roleRepository.findByRoleName(RoleName.ROLE_CLIENT);
+        if(role == null) {
+            throw new RoleNotFoundException("Le rôle CLIENT est introuvable.");
+        }
         user.getRoles().add(role);
         clientProfil.setUser(user);
 
@@ -149,5 +151,44 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
     }
 
+    @Override
+    @Transactional
+    public AuthResponseDto addAdministrator(RegisterRequestDto registerRequestDto) throws Exception {
+        if(userRepository.existsByEmail(registerRequestDto.email())) {
+            throw new EmailAlreadyExistsException("L'adresse email est déjà utilisée.");
+        }
+
+        //user
+        User user =  userMapper.toUserEntity(registerRequestDto);
+        Role role = roleRepository.findByRoleName(RoleName.ROLE_ADMIN);
+        if(role == null) {
+            throw new RoleNotFoundException("Le rôle ADMIN est introuvable.");
+        }
+        user.getRoles().add(role);
+        //hashing
+        user.setPassword(passwordEncoder.encode(registerRequestDto.password()));
+
+        // full name
+        String fullName =  registerRequestDto.firstName() + " " + registerRequestDto.lastName();
+        user.setFullName(fullName);
+
+        //admin profil
+        AdminProfil adminProfil = userMapper.toAdminProfilEntity(registerRequestDto);
+        adminProfil.setUser(user);
+
+        //save data
+        userRepository.save(user);
+        profilRepository.save(adminProfil);
+
+        AuthResponseDto authResponseDto = AuthResponseDto.builder()
+                .roles(user.getRoles())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .expiresIn(expiresIn)
+                .message(fullName + " enregistré avec succès.")
+                .build();
+
+        return authResponseDto;
+    }
 
 }

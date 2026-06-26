@@ -11,4 +11,5 @@ public interface UserService {
     void updatePassword(UpdatePwdRequestDto updatePwdRequestDto,String email) ;
     Map<String ,String> changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception;
     void deleteAccount(String email);
+    AuthResponseDto addAdministrator(RegisterRequestDto registerRequestDto) throws Exception;
 }

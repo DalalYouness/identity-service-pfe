@@ -10,6 +10,5 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 public class AdminProfil extends Profil {
-
 }
 //done Alhamdulilah 👌
