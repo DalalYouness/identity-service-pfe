@@ -1,6 +1,7 @@
 package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.dtos.*;
+import com.dalal.identityservicepfe.entities.AdminProfil;
 import com.dalal.identityservicepfe.entities.ClientProfil;
 import com.dalal.identityservicepfe.entities.Role;
 import com.dalal.identityservicepfe.entities.User;
@@ -32,6 +33,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.Month;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -360,6 +362,75 @@ class UserServiceImplTest {
         userService.deleteAccount("dalal.yns@gmail.com");
 
         Mockito.verify(userRepository, Mockito.times(1)).delete(user);
+    }
+
+    /*
+    * *****************
+    *   Add admin
+    * *****************
+    * */
+
+    @Test
+    void addAdministrator_Success() throws Exception {
+        // 1. Arrange
+        RegisterRequestDto adminRequest = new RegisterRequestDto(
+                "Youness", "Admin", "youness.admin@gmail.com", "SecurePassword1!",
+                "0611223344", LocalDate.of(1998, Month.MAY, 12),
+                Gender.MALE, "Anfa Street", "Morocco", "Casablanca"
+        );
+
+        User mockUser = User.builder()
+                .id(2L)
+                .email(adminRequest.email())
+                .password(adminRequest.password())
+                .roles(new HashSet<>())
+                .build();
+
+        AdminProfil mockAdminProfil = new AdminProfil();
+
+        Role adminRole = Role.builder().roleName(RoleName.ROLE_ADMIN).build();
+
+        Mockito.when(userRepository.existsByEmail(adminRequest.email())).thenReturn(false);
+        Mockito.when(userMapper.toUserEntity(adminRequest)).thenReturn(mockUser);
+        Mockito.when(roleRepository.findByRoleName(RoleName.ROLE_ADMIN)).thenReturn(adminRole);
+        Mockito.when(userMapper.toAdminProfilEntity(adminRequest)).thenReturn(mockAdminProfil);
+        Mockito.when(passwordEncoder.encode(adminRequest.password())).thenReturn("hashed_admin_password");
+
+        // 2. Act
+        AuthResponseDto response = userService.addAdministrator(adminRequest);
+
+        // 3. Assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals("youness.admin@gmail.com", response.email());
+        Assertions.assertTrue(response.roles().contains(adminRole));
+        Assertions.assertEquals("Youness Admin enregistré avec succès.", response.message());
+        Assertions.assertNull(response.token());
+
+        // Verify
+        Mockito.verify(userRepository, Mockito.times(1)).save(mockUser);
+        Mockito.verify(profilRepository, Mockito.times(1)).save(mockAdminProfil);
+    }
+
+    @Test
+    void addAdministrator_Failure_WhenEmailAlreadyExists() {
+        // 1. Arrange
+        RegisterRequestDto adminRequest = new RegisterRequestDto(
+                "Youness", "Admin", "youness.admin@gmail.com", "SecurePassword1!",
+                "0611223344", LocalDate.of(1998, Month.MAY, 12),
+                Gender.MALE, "Anfa Street", "Morocco", "Casablanca"
+        );
+
+        Mockito.when(userRepository.existsByEmail(adminRequest.email())).thenReturn(true);
+
+        // 2. Act & 3. Assert
+        EmailAlreadyExistsException exception = Assertions.assertThrows(EmailAlreadyExistsException.class, () -> {
+            userService.addAdministrator(adminRequest);
+        });
+
+        Assertions.assertEquals("L'adresse email est déjà utilisée.", exception.getMessage());
+        // verify
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
+        Mockito.verify(profilRepository, Mockito.never()).save(Mockito.any(AdminProfil.class));
     }
 }
 
