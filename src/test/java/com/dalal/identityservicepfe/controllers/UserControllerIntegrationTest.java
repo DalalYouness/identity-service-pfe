@@ -4,8 +4,8 @@ import com.dalal.identityservicepfe.dtos.ChangeEmailRequestDto;
 import com.dalal.identityservicepfe.dtos.LoginRequestDto;
 import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
 import com.dalal.identityservicepfe.dtos.UpdatePwdRequestDto;
-import com.dalal.identityservicepfe.entities.User;
 import com.dalal.identityservicepfe.enums.Gender;
+import com.dalal.identityservicepfe.repositories.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.hamcrest.Matchers;
@@ -19,10 +19,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.DeleteMapping;
-
 import java.time.LocalDate;
-import java.util.Map;
+
 
 @AutoConfigureMockMvc
 @SpringBootTest
@@ -34,6 +32,9 @@ public class UserControllerIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
     private RegisterRequestDto sharedUserRequest;
@@ -359,8 +360,30 @@ public class UserControllerIntegrationTest {
                 .andExpect(MockMvcResultMatchers.status().isConflict());
     }
 
-    @DeleteMapping("/delete-compte")
-    public void deleteCompte() {
+    /*
+     * *************************
+     * delete account
+     * *************************
+     * */
+
+    @Test
+    public void deleteAccount_ShouldReturnNoContent_WhenUserIsAuthenticated() throws Exception {
+        // 1. Register
+        var result = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String contentAsString = result.getResponse().getContentAsString();
+        String token = JsonPath.read(contentAsString, "$.token");
+
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/auth/delete-account")
+                        .header("Authorization", "Bearer " + token)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
 
     }
 
