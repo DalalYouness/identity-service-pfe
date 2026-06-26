@@ -387,4 +387,45 @@ public class UserControllerIntegrationTest {
 
     }
 
+    /*
+    * **********************
+    *   Add admin
+    * **********************
+    * */
+    @Test
+    public void addAdministrator_ShouldReturnCreated_WhenCallerIsAdmin() throws Exception {
+
+        var registerResult = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String adminToken = JsonPath.read(registerResult.getResponse().getContentAsString(), "$.token");
+
+        RegisterRequestDto newAdminDto = new RegisterRequestDto(
+                "Youness",
+                "Admin",
+                "youness.admin@gmail.com",
+                "SecurePassword1!",
+                "0611223344",
+                LocalDate.of(1998, 5, 12),
+                Gender.MALE,
+                "Anfa Street",
+                "Maroc",
+                "Casablanca"
+        );
+        String newAdminJson = objectMapper.writeValueAsString(newAdminDto);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/add-administrator")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newAdminJson)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated()) // 👈 التّأكيد على 201 Created
+                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("youness.admin@gmail.com"))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.nullValue())) // 👈 الـ Token جَا null نِيشَان!
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Youness Admin enregistré avec succès."));
+    }
+
 }
