@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -200,6 +201,99 @@ public class UserServiceImpl implements UserService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
         Page<Profil> profilsPage = profilRepository.findAll(pageable);
         return profilsPage.map(userMapper::toProfileMinDto);
+    }
+
+
+    @Override
+    public Page<PrestataireMinResponseDto> searchPrestatairesByName(String query, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<PrestataireProfil> prestataires = profilRepository.searchByFullName(query, pageable);
+        return prestataires.map(userMapper::toPrestataireMinDto);
+    }
+
+    @Override
+    public Page<PrestataireMinResponseDto> filterPrestatairesByCity(String city, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<PrestataireProfil> prestataires = profilRepository.
+                findByCityIgnoreCase(city, pageable);
+        return prestataires.map(userMapper::toPrestataireMinDto);
+    }
+
+    @Override
+    public PrestatairePublicDetailDto getPrestatairePublicWithoutContact(Long id) {
+
+        Profil profil = profilRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Prestataire non trouvé"));
+
+        if (!(profil instanceof PrestataireProfil prestataireProfil)) {
+            throw new IllegalArgumentException("Ce profil n'est pas un prestataire");
+        }
+        return userMapper.toPrestatairePublicDetailDto(prestataireProfil);
+    }
+
+    @Override
+    public UserProfileResponseDto getAuthenticatedUserProfile(String email) {
+
+        Profil profil = profilRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("utilisateur non trouvé"));
+
+        if (profil instanceof PrestataireProfil prestataireProfil) {
+            return userMapper.toUserProfileDto(prestataireProfil);
+        } else if (profil instanceof ClientProfil clientProfil) {
+            return userMapper.toUserProfileDto(clientProfil);
+        } else if (profil instanceof  AdminProfil admin) {
+            return userMapper.toUserProfileDto(admin);
+        }
+
+        throw new IllegalArgumentException("Type de profil inconnu");
+    }
+
+    @Override
+    public UserProfileResponseDto updateAuthenticatedUserProfile(String email, UpdateProfileRequestDto dto) {
+
+        Profil profil = profilRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé"));
+
+        profil.setFirstName(dto.firstName());
+        profil.setLastName(dto.lastName());
+        profil.setPhoneNumber(dto.phoneNumber());
+        profil.setAddress(dto.address());
+        profil.setCity(dto.city());
+        profil.setCountry(dto.country());
+
+        if (profil instanceof PrestataireProfil prestataireProfil) {
+
+            prestataireProfil.setInterventionArea(dto.interventionArea());
+
+            PrestataireProfil updated = profilRepository.save(prestataireProfil);
+
+            return userMapper.toUserProfileDto(updated);
+
+        } else if (profil instanceof ClientProfil clientProfil) {
+
+            clientProfil.setBio(dto.bio());
+            ClientProfil updated = profilRepository.save(clientProfil);
+            return userMapper.toUserProfileDto(updated);
+
+        } else if (profil instanceof AdminProfil adminProfil) {
+
+            AdminProfil updated = profilRepository.save(adminProfil);
+            return userMapper.toUserProfileDto(updated);
+        }
+
+        throw new IllegalArgumentException("Type de profil inconnu");
+    }
+
+    @Override
+    public PrestataireAuthResponseDto getPrestataireDetailForClient(Long prestataireId) {
+        Profil profil = profilRepository.findById(prestataireId).orElseThrow(
+                () -> new UserNotFoundException("Prestataire non trouvé")
+        );
+        if(!(profil instanceof PrestataireProfil prestataireProfil)) {
+            throw new IllegalArgumentException("Ce profil n'est pas un prestataire");
+        }
+        return userMapper.toPrestataireAuthDetailDto(prestataireProfil);
+
     }
 
 }

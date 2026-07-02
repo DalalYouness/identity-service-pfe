@@ -1,7 +1,6 @@
 package com.dalal.identityservicepfe.mappers;
 
-import com.dalal.identityservicepfe.dtos.RegisterRequestDto;
-import com.dalal.identityservicepfe.dtos.UserProfileMinDto;
+import com.dalal.identityservicepfe.dtos.*;
 import com.dalal.identityservicepfe.entities.*;
 import com.dalal.identityservicepfe.enums.RoleName;
 import org.mapstruct.Mapper;
@@ -31,5 +30,13 @@ public interface UserMapper {
                 .map(Role::getRoleName)
                 .collect(Collectors.toSet());
     }
+    PrestataireMinResponseDto toPrestataireMinDto(Profil prestataireProfil);
+    PrestatairePublicDetailDto toPrestatairePublicDetailDto(Profil prestataireProfil);
+    //my profil api
+    UserProfileResponseDto toUserProfileDto(ClientProfil clientProfil);
+    UserProfileResponseDto toUserProfileDto(PrestataireProfil prestataireProfil);
+    UserProfileResponseDto toUserProfileDto(AdminProfil adminProfil);
+
+    PrestataireAuthResponseDto toPrestataireAuthDetailDto(PrestataireProfil prestataireProfil);
 }
 

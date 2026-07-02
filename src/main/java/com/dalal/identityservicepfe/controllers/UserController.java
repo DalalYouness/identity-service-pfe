@@ -25,11 +25,13 @@ public class UserController {
         AuthResponseDto registerResponseDto = userService.register(registerRequestDto);
         return new ResponseEntity<>(registerResponseDto, HttpStatus.CREATED);
     }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto loginRequestDto) throws Exception {
         AuthResponseDto response = userService.login(loginRequestDto);
         return ResponseEntity.ok(response);
     }
+
     @PutMapping("/update-password")
     public ResponseEntity<Map<String,String>> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
         String username = userDetails.getUsername();
@@ -43,6 +45,7 @@ public class UserController {
         Map<String, String> response = userService.changeEmail(changeEmailRequestDto, email);
         return ResponseEntity.ok(response);
     }
+
     @DeleteMapping("/delete-account")
     public ResponseEntity<?> deleteAccountByEmail(@AuthenticationPrincipal UserDetails userDetails) {
         String email = userDetails.getUsername();
@@ -66,5 +69,51 @@ public class UserController {
         Page<UserProfileMinDto> usersPage = userService.getAllUsers(page, size);
         return ResponseEntity.ok(usersPage);
     }
+
+    /******************day1 5 apis (we do not do the tests) ********************/
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<PrestataireMinResponseDto>> searchByName(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.searchPrestatairesByName(query, page, size));
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<Page<PrestataireMinResponseDto>> filterByCity(
+            @RequestParam String city,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.filterPrestatairesByCity(city, page, size));
+    }
+
+    @GetMapping("/{id}/public-profile")
+    public ResponseEntity<PrestatairePublicDetailDto> getPublicProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getPrestatairePublicWithoutContact(id));
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<UserProfileResponseDto> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        String email = userDetails.getUsername();
+        return ResponseEntity.ok(userService.getAuthenticatedUserProfile(email));
+    }
+
+    @PutMapping("/update-profile")
+    public ResponseEntity<UserProfileResponseDto> updateProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdateProfileRequestDto dto) {
+        String email = userDetails.getUsername();
+        return ResponseEntity.ok(userService.updateAuthenticatedUserProfile(email, dto));
+    }
+
+    @GetMapping("/{id}/prestataire-info")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<PrestataireAuthResponseDto> getPrestataireInfo(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getPrestataireDetailForClient(id));
+    }
 }
+
+
+
 
