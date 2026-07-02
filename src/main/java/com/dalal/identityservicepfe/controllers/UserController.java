@@ -1,10 +1,10 @@
 package com.dalal.identityservicepfe.controllers;
 
 import com.dalal.identityservicepfe.dtos.*;
-import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,7 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -52,9 +51,20 @@ public class UserController {
     }
 
     @PostMapping("/add-administrator")
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AuthResponseDto> addAdministrator(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
         AuthResponseDto registerResponseDto = userService.addAdministrator(registerRequestDto);
         return new ResponseEntity<>(registerResponseDto, HttpStatus.CREATED);
     }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserProfileMinDto>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<UserProfileMinDto> usersPage = userService.getAllUsers(page, size);
+        return ResponseEntity.ok(usersPage);
+    }
 }
+

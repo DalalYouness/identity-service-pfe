@@ -13,6 +13,10 @@ import com.dalal.identityservicepfe.repositories.UserRepository;
 import com.dalal.identityservicepfe.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -189,6 +193,13 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         return authResponseDto;
+    }
+
+    @Override
+    public Page<UserProfileMinDto> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Profil> profilsPage = profilRepository.findAll(pageable);
+        return profilsPage.map(userMapper::toProfileMinDto);
     }
 
 }

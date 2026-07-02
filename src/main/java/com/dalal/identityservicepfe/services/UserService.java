@@ -2,6 +2,7 @@ package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.dtos.*;
 import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
+import org.springframework.data.domain.Page;
 
 import java.util.Map;
 
@@ -12,4 +13,5 @@ public interface UserService {
     Map<String ,String> changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception;
     void deleteAccount(String email);
     AuthResponseDto addAdministrator(RegisterRequestDto registerRequestDto) throws Exception;
+    Page<UserProfileMinDto> getAllUsers(int page, int size);
 }

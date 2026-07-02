@@ -424,8 +424,72 @@ public class UserControllerIntegrationTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isCreated()) // 👈 التّأكيد على 201 Created
                 .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("youness.admin@gmail.com"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.nullValue())) // 👈 الـ Token جَا null نِيشَان!
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.nullValue()))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Youness Admin enregistré avec succès."));
     }
+    /*
+     * *****************************
+     * get All users (for admin)
+     * *****************************
+     * */
 
+    @Test
+    public void getAllUsers_ShouldReturnOKAndPagedUsers_WhenCallerIsAdmin() throws Exception {
+       // I didn't use sharedUser because i would to use some different data for admin
+        RegisterRequestDto adminRegisterDto = new RegisterRequestDto(
+                "Youness", "Dalal", "admin.younes@enset.com", "SecurePassword1!",
+                "0611223399", LocalDate.of(1998, 1,1), Gender.MALE,
+                "SM casablana", "Maroc", "Casablanca"
+        );
+        String adminJsonPayload = objectMapper.writeValueAsString(adminRegisterDto);
+
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/add-administrator")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(adminJsonPayload))
+                .andExpect(MockMvcResultMatchers.status().isCreated());
+
+
+        LoginRequestDto loginRequest = new LoginRequestDto("admin.younes@enset.com", "SecurePassword1!");
+        String loginJson = objectMapper.writeValueAsString(loginRequest);
+
+        var loginResult = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andReturn();
+
+        String adminToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/auth/users")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .param("page", "0")
+                        .param("size", "5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.content").isArray())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.pageable.pageSize").value(5));
+    }
+    @Test
+    public void getAllUsers_ShouldReturn403Forbidden_WhenCallerIsNotAdmin() throws Exception {
+
+        var registerResult = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .content(sharedUserJson)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isCreated())
+                .andReturn();
+
+        String clientToken = JsonPath.read(registerResult.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/auth/users")
+                        .header("Authorization", "Bearer " + clientToken)
+                        .param("page", "0")
+                        .param("size", "10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+
+
+                .andExpect(MockMvcResultMatchers.status().isForbidden());
+    }
 }

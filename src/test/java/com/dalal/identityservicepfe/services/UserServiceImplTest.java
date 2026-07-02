@@ -1,10 +1,7 @@
 package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.dtos.*;
-import com.dalal.identityservicepfe.entities.AdminProfil;
-import com.dalal.identityservicepfe.entities.ClientProfil;
-import com.dalal.identityservicepfe.entities.Role;
-import com.dalal.identityservicepfe.entities.User;
+import com.dalal.identityservicepfe.entities.*;
 import com.dalal.identityservicepfe.enums.Gender;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
@@ -24,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,6 +32,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -431,6 +430,54 @@ class UserServiceImplTest {
         // verify
         Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
         Mockito.verify(profilRepository, Mockito.never()).save(Mockito.any(AdminProfil.class));
+    }
+
+    /*
+    * *************************
+    *   get users (for admin)
+    * *************************
+    * */
+
+    @Test
+    void getAllUsers_Success_ShouldReturnPagedUsers() {
+        // 1. Arrange
+        int page = 0;
+        int size = 10;
+
+        AdminProfil mockProfil = new AdminProfil();
+        mockProfil.setId(1L);
+        mockProfil.setFirstName("Youness");
+        mockProfil.setLastName("Dalal");
+        mockProfil.setGender(Gender.MALE);
+
+        UserProfileMinDto expectedDto = new UserProfileMinDto(
+                "Youness",
+                "Dalal",
+                Gender.MALE,
+                com.dalal.identityservicepfe.enums.AccountStatus.ACTIVE, // هادي نخليوها حيت كاين فرق بينها وبين AccountStatus د spring security
+                Set.of(RoleName.ROLE_ADMIN)
+        );
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Profil> mockPage = new PageImpl<>(List.of(mockProfil), pageable, 1);
+
+        Mockito.when(profilRepository.findAll(Mockito.any(Pageable.class))).thenReturn(mockPage);
+        Mockito.when(userMapper.toProfileMinDto(mockProfil)).thenReturn(expectedDto);
+
+        // 2. Act
+        Page<UserProfileMinDto> resultPage = userService.getAllUsers(page, size);
+
+        // 3. Assert
+        Assertions.assertNotNull(resultPage);
+        Assertions.assertEquals(1, resultPage.getTotalElements());
+        Assertions.assertEquals(1, resultPage.getContent().size());
+
+        UserProfileMinDto actualDto = resultPage.getContent().get(0);
+        Assertions.assertEquals("Youness", actualDto.firstName());
+        Assertions.assertEquals("Dalal", actualDto.lastName());
+        Assertions.assertEquals(Gender.MALE, actualDto.gender());
+
+        Mockito.verify(profilRepository, Mockito.times(1)).findAll(Mockito.any(Pageable.class));
     }
 }
 
