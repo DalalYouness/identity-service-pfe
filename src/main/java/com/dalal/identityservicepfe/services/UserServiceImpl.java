@@ -5,6 +5,7 @@ import com.dalal.identityservicepfe.entities.*;
 import com.dalal.identityservicepfe.enums.RoleName;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
 import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
+import com.dalal.identityservicepfe.exceptions.RoleNotFoundException;
 import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.mappers.UserMapper;
 import com.dalal.identityservicepfe.repositories.ProfilRepository;
@@ -20,13 +21,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.management.relation.RoleNotFoundException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -48,7 +51,7 @@ public class UserServiceImpl implements UserService {
     public AuthResponseDto register(RegisterRequestDto registerRequestDto) throws Exception {
 
         //check if email already exist
-        if(userRepository.existsByEmail(registerRequestDto.email())) {
+        if (userRepository.existsByEmail(registerRequestDto.email())) {
             throw new EmailAlreadyExistsException("L'adresse email est déjà utilisée.");
         }
 
@@ -61,7 +64,7 @@ public class UserServiceImpl implements UserService {
 
         //setting relationnel data
         Role role = roleRepository.findByRoleName(RoleName.ROLE_CLIENT);
-        if(role == null) {
+        if (role == null) {
             throw new RoleNotFoundException("Le rôle CLIENT est introuvable.");
         }
         user.getRoles().add(role);
@@ -76,7 +79,7 @@ public class UserServiceImpl implements UserService {
         profilRepository.save(clientProfil);
 
         //generate token
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateToken(user.getEmail(),user.getRoles(),user.getId());
 
         return new AuthResponseDto(
                 token,
@@ -92,13 +95,11 @@ public class UserServiceImpl implements UserService {
         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(loginRequestDto.email(), loginRequestDto.password());
         Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
         User user = (User) authentication.getPrincipal();
-        String jwtToken = jwtService.generateToken(user.getEmail());
-        System.out.println("generated token in login : " + jwtToken );
+        String jwtToken = jwtService.generateToken(user.getEmail(),user.getRoles(),user.getId());
+        System.out.println("generated token in login : " + jwtToken);
 
         String fullName = user.getFullName();
-        return new AuthResponseDto(jwtToken,user.getEmail(),fullName,"Connexion réussie avec succès.",user.getRoles(),expiresIn);
-
-
+        return new AuthResponseDto(jwtToken, user.getEmail(), fullName, "Connexion réussie avec succès.", user.getRoles(), expiresIn);
     }
 
     @Override
@@ -125,7 +126,7 @@ public class UserServiceImpl implements UserService {
     // 2. Add email verification for email change
     // 3. Add email verification during registration
     @Override
-    public Map<String, String> changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception { // 👈 حيدنا throws Exception
+    public AuthResponseDto changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception { // 👈 حيدنا throws Exception
         User user = userRepository.findByEmail(email);
         if (user == null) {
             throw new UserNotFoundException("user non trouvé");
@@ -135,7 +136,7 @@ public class UserServiceImpl implements UserService {
             throw new EmailAlreadyExistsException("Veuillez saisir une adresse email valide et disponible.");
         }
 
-        if(!passwordEncoder.matches(changeEmailRequestDto.currentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(changeEmailRequestDto.currentPassword(), user.getPassword())) {
             throw new InvalidPasswordException("Le mot de passe est incorrect.");
         }
 
@@ -143,14 +144,21 @@ public class UserServiceImpl implements UserService {
         user.setEmail(newEmail);
         userRepository.save(user);
 
-        String newJwtToken = jwtService.generateToken(newEmail);
-        return Map.of("token", newJwtToken);
+        String newJwtToken = jwtService.generateToken(newEmail,user.getRoles(),user.getId());
+        return AuthResponseDto.builder()
+                .email(newEmail)
+                .message("Email changé avec succès")
+                .expiresIn(expiresIn)
+                .roles(user.getRoles())
+                .token(newJwtToken)
+                .fullName(user.getFullName())
+                .build();
     }
 
     @Override
     public void deleteAccount(String email) {
         User user = userRepository.findByEmail(email);
-        if(user == null) {
+        if (user == null) {
             throw new UserNotFoundException("user non trouvé");
         }
         userRepository.delete(user);
@@ -159,14 +167,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public AuthResponseDto addAdministrator(RegisterRequestDto registerRequestDto) throws Exception {
-        if(userRepository.existsByEmail(registerRequestDto.email())) {
+        if (userRepository.existsByEmail(registerRequestDto.email())) {
             throw new EmailAlreadyExistsException("L'adresse email est déjà utilisée.");
         }
 
         //user
-        User user =  userMapper.toUserEntity(registerRequestDto);
+        User user = userMapper.toUserEntity(registerRequestDto);
         Role role = roleRepository.findByRoleName(RoleName.ROLE_ADMIN);
-        if(role == null) {
+        if (role == null) {
             throw new RoleNotFoundException("Le rôle ADMIN est introuvable.");
         }
         user.getRoles().add(role);
@@ -174,7 +182,7 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(registerRequestDto.password()));
 
         // full name
-        String fullName =  registerRequestDto.firstName() + " " + registerRequestDto.lastName();
+        String fullName = registerRequestDto.firstName() + " " + registerRequestDto.lastName();
         user.setFullName(fullName);
 
         //admin profil
@@ -241,7 +249,7 @@ public class UserServiceImpl implements UserService {
             return userMapper.toUserProfileDto(prestataireProfil);
         } else if (profil instanceof ClientProfil clientProfil) {
             return userMapper.toUserProfileDto(clientProfil);
-        } else if (profil instanceof  AdminProfil admin) {
+        } else if (profil instanceof AdminProfil admin) {
             return userMapper.toUserProfileDto(admin);
         }
 
@@ -289,11 +297,104 @@ public class UserServiceImpl implements UserService {
         Profil profil = profilRepository.findById(prestataireId).orElseThrow(
                 () -> new UserNotFoundException("Prestataire non trouvé")
         );
-        if(!(profil instanceof PrestataireProfil prestataireProfil)) {
+        if (!(profil instanceof PrestataireProfil prestataireProfil)) {
             throw new IllegalArgumentException("Ce profil n'est pas un prestataire");
         }
         return userMapper.toPrestataireAuthDetailDto(prestataireProfil);
 
     }
 
+    @Override
+    @Transactional // 🌟 ضَرُورِي تْكُون كَايْنَة هْنَا
+    public BecomePrestataireRespDto becomePrestataire(String email, BecomePrestataireDto becomePrestataireDto) throws Exception {
+
+        Profil oldProfil = profilRepository.findByUserEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé."));
+
+        if (oldProfil instanceof PrestataireProfil) {
+            throw new IllegalArgumentException("Vous êtes déjà un prestataire.");
+        }
+
+        if (oldProfil instanceof AdminProfil) {
+            throw new IllegalArgumentException("Vous n'êtes pas un client.");
+        }
+
+        User user = oldProfil.getUser();
+        Role role = roleRepository.findByRoleName(RoleName.ROLE_PRESTATAIRE);
+
+        if (role == null) {
+            throw new RoleNotFoundException("Le rôle PRESTATAIRE est introuvable.");
+        }
+
+        user.getRoles().clear();
+        user.getRoles().add(role);
+        userRepository.save(user);
+
+        profilRepository.convertToPrestataireNative(
+                oldProfil.getId(),
+                becomePrestataireDto.interventionArea()
+        );
+        String token = jwtService.generateToken(user.getEmail(),user.getRoles(),user.getId());
+        BecomePrestataireRespDto becomePrestataireRespDto = new BecomePrestataireRespDto("Félicitations ! Vous êtes maintenant un prestataire.",
+                token);
+        return becomePrestataireRespDto;
+    }
+
+    @Override
+    public void switchToClient(String email) {
+
+        Profil oldProfil = profilRepository.findByUserEmail(email)
+                .orElseThrow(() ->
+                        new UserNotFoundException("Utilisateur non trouvé."));
+
+        if (oldProfil instanceof ClientProfil || oldProfil instanceof AdminProfil) {
+            throw new IllegalArgumentException("Vous n'êtes pas un prestataire pour pouvoir switcher en mode client.");
+        }
+
+        User user = oldProfil.getUser();
+
+        Role role = roleRepository.findByRoleName(RoleName.ROLE_CLIENT);
+        if (role == null) {
+            throw new RoleNotFoundException("Le rôle CLIENT est introuvable.");
+        }
+
+        user.getRoles().clear();
+        user.getRoles().add(role);
+        userRepository.save(user);
+
+        profilRepository.convertToClientNative(oldProfil.getId());
+    }
+
+//    @Override
+//    public List<UserProfileMinDto> getProfilesByRole(String roleStr) {
+//
+//        String formattedRole = "ROLE_" + roleStr.toUpperCase();
+//
+//        RoleName roleName;
+//
+//        try {
+//            roleName = RoleName.valueOf(formattedRole); // la méthode valueOf c'est méthode special il nous valide si l'expression valide ou non
+//        } catch (IllegalArgumentException e) {
+//
+//            throw new IllegalArgumentException("Le rôle '" + roleStr + "' n'est pas valide. Les rôles autorisés sont: CLIENT, PRESTATAIRE, ADMIN.");
+//        }
+//
+//        List<Profil> profils = profilRepository.findAllByRoleName(roleName);
+//
+//        return profils.stream()
+//                .map(profil -> {
+//                    Set<RoleName> rolesEnums = profil.getUser().getRoles().stream()
+//                            .map(role -> role.getRoleName())
+//                            .collect(Collectors.toSet());
+//
+//                    return new UserProfileMinDto(
+//                            profil.getFirstName(),
+//                            profil.getLastName(),
+//                            profil.getGender(),
+//                            profil.getUser().getAccountStatus(),
+//                            rolesEnums
+//                    );
+//                })
+//                .toList();
+//    }
 }

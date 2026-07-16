@@ -49,6 +49,10 @@ public abstract class Profil {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    private String bio;
+
+    @Column(name = "intervention_area")
+    private String interventionArea;
 
     @OneToOne
     @MapsId

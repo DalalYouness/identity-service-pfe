@@ -17,8 +17,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
+    /*
+    * Gestion d'authentication
+    * */
     private final UserService userService;
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDto> register(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
@@ -40,9 +44,9 @@ public class UserController {
     }
 
     @PutMapping("/change-email")
-    public ResponseEntity<Map<String,String>> changeEmail(@RequestBody @Valid ChangeEmailRequestDto  changeEmailRequestDto, @AuthenticationPrincipal UserDetails userDetails) throws Exception {
+    public ResponseEntity<AuthResponseDto> changeEmail(@RequestBody @Valid ChangeEmailRequestDto  changeEmailRequestDto, @AuthenticationPrincipal UserDetails userDetails) throws Exception {
         String email = userDetails.getUsername(); // the username = email in my case
-        Map<String, String> response = userService.changeEmail(changeEmailRequestDto, email);
+        AuthResponseDto response = userService.changeEmail(changeEmailRequestDto, email);
         return ResponseEntity.ok(response);
     }
 
@@ -69,6 +73,10 @@ public class UserController {
         Page<UserProfileMinDto> usersPage = userService.getAllUsers(page, size);
         return ResponseEntity.ok(usersPage);
     }
+
+    /*
+     * gestion de profil
+     */
 
     /******************day1 5 apis (we do not do the tests) ********************/
 
@@ -112,6 +120,46 @@ public class UserController {
     public ResponseEntity<PrestataireAuthResponseDto> getPrestataireInfo(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getPrestataireDetailForClient(id));
     }
+
+    /********************day 2 : 5 api************************/
+
+    @PostMapping("/become-prestataire")
+    @PreAuthorize("hasRole('CLIENT')")
+    public ResponseEntity<BecomePrestataireRespDto> becomePrestataire(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @Valid @RequestBody BecomePrestataireDto becomePrestataireDto) throws Exception {
+
+        BecomePrestataireRespDto becomePrestataireRespDto = userService.becomePrestataire(
+                userDetails.getUsername(),
+                becomePrestataireDto
+        );
+
+        return ResponseEntity.ok(becomePrestataireRespDto);
+    }
+
+    @PostMapping("/switch-to-client")
+    @PreAuthorize("hasRole('PRESTATAIRE')")
+    //n'oublie pas de changer le token par ce que a été changé
+    public ResponseEntity<Map<String, String>> switchToClient(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        userService.switchToClient(userDetails.getUsername());
+
+        return ResponseEntity.ok(
+                Map.of("message", "Vous êtes maintenant un client.")
+        );
+    }
+
+//    @GetMapping("/admin/users-by-role")
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public ResponseEntity<List<UserProfileMinDto>> getUsersByRole(
+//            @RequestParam(value = "role", required = true) String role) {
+//
+//        List<UserProfileMinDto> users = userService.getProfilesByRole(role);
+//        return ResponseEntity.ok(users);
+//    }
+
+
 }
 
 

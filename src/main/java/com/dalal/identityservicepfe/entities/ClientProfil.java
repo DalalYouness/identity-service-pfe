@@ -11,6 +11,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 public class ClientProfil extends Profil {
-    private String bio;
+
 }
 //done Alhamdulilah 👌

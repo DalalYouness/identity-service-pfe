@@ -20,6 +20,7 @@ import org.junit.jupiter.api.function.Executable;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -103,7 +104,7 @@ class UserServiceImplTest {
         Mockito.when(userRepository.save(Mockito.any(User.class))).thenReturn(mockUser);
         Mockito.when(profilRepository.save(Mockito.any(ClientProfil.class))).thenReturn(mockProfil);
 
-        Mockito.when(jwtService.generateToken(Mockito.anyString())).thenReturn("my-token");
+        Mockito.when(jwtService.generateToken(Mockito.anyString(),Mockito.anySet(),Mockito.anyLong())).thenReturn("my-token");
 
         var response = userService.register(registerRequestDto);
 
@@ -137,21 +138,23 @@ class UserServiceImplTest {
 
         LoginRequestDto loginRequestDto = new LoginRequestDto("sofiadouaa18@gmail.com", "sofiaDouaa@188");
 
+        Role mockRole = Role.builder().roleName(RoleName.ROLE_CLIENT).build();
+        Set<Role> mockRolesSet = Set.of(mockRole);
+
         User mockUser = User.builder()
                 .id(1L)
                 .email(loginRequestDto.email())
                 .password(loginRequestDto.password())
                 .fullName("youness dalal")
-                .roles(null)
+                .roles(mockRolesSet)
                 .build();
 
-        // if we will use a mock just inside some methods it's enough to create it inside the methode directly
         Authentication mockAuthentication = Mockito.mock(Authentication.class);
         Mockito.when(authenticationManager.authenticate(Mockito.any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(mockAuthentication);
 
         Mockito.when(mockAuthentication.getPrincipal()).thenReturn(mockUser);
-        Mockito.when(jwtService.generateToken(mockUser.getEmail())).thenReturn("my-token");
+        Mockito.when(jwtService.generateToken(mockUser.getEmail(), Mockito.anySet(),Mockito.anyLong())).thenReturn("my-token");
 
         var loginResponse = userService.login(loginRequestDto);
 
@@ -160,7 +163,7 @@ class UserServiceImplTest {
                 loginRequestDto.email(),
                 "youness dalal",
                 "Connexion réussie avec succès.",
-                null,
+                mockRolesSet,
                 null
         );
 
@@ -264,26 +267,43 @@ class UserServiceImplTest {
     /*
     * change email
     * */
-
     @Test
-    void changeEmail_Success() throws Exception{
+    void changeEmail_Success() throws Exception {
         // 1. Arrange
+        Role mockRole = Role.builder().roleName(RoleName.ROLE_CLIENT).build();
+        Set<Role> mockRolesSet = Set.of(mockRole);
+
         User user = new User();
+        user.setId(1L); // Setting ID because jwtService needs user.getId()
         user.setEmail("ahmed@email.com");
         user.setPassword("encoded_password");
+        user.setFullName("Ahmed Bennani");
+        user.setRoles(mockRolesSet);
+
         ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "my_current_password");
 
+        // Mocking Repository and Encoder dependencies
         Mockito.when(userRepository.findByEmail("ahmed@email.com")).thenReturn(user);
         Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(false);
         Mockito.when(passwordEncoder.matches("my_current_password", "encoded_password")).thenReturn(true);
-        Mockito.when(jwtService.generateToken("new@email.com")).thenReturn("mocked_jwt_token");
+
+        // Mocking JWT generation
+        Mockito.when(jwtService.generateToken(Mockito.eq("new@email.com"), Mockito.anySet(), Mockito.anyLong()))
+                .thenReturn("mocked_jwt_token");
 
         // 2. Act
-        Map<String, String> response = userService.changeEmail(requestDto, "ahmed@email.com");
+        // Calling the updated method that returns AuthResponseDto instead of Map
+        AuthResponseDto response = userService.changeEmail(requestDto, "ahmed@email.com");
 
         // 3. Assert
         Assertions.assertNotNull(response);
-        Assertions.assertEquals("mocked_jwt_token", response.get("token"));
+        Assertions.assertEquals("mocked_jwt_token", response.token());
+        Assertions.assertEquals("new@email.com", response.email());
+        Assertions.assertEquals("Ahmed Bennani", response.fullName());
+        Assertions.assertEquals("Email changé avec succès", response.message());
+        Assertions.assertTrue(response.roles().contains(mockRole)); // Verifying the roles set is preserved
+
+        // Check if the actual entity state was updated and saved to DB
         Assertions.assertEquals("new@email.com", user.getEmail());
         Mockito.verify(userRepository, Mockito.times(1)).save(user);
     }
@@ -303,7 +323,6 @@ class UserServiceImplTest {
 
     @Test
     void changeEmail_EmailAlreadyExists() throws Exception {
-        // 1. Arrange
         User user = new User();
         user.setEmail("old@email.com");
         ChangeEmailRequestDto requestDto = new ChangeEmailRequestDto("new@email.com", "raw_password");
@@ -311,20 +330,16 @@ class UserServiceImplTest {
         Mockito.when(userRepository.findByEmail("old@email.com")).thenReturn(user);
         Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(true);
 
-        // 2. Act & 3. Assert
         Assertions.assertThrows(EmailAlreadyExistsException.class, () ->
                 userService.changeEmail(requestDto, "old@email.com")
         );
-        Mockito.verify(userRepository, Mockito.never())
-                .save(Mockito.any(User.class));
 
-        Mockito.verify(jwtService, Mockito.never())
-                .generateToken(Mockito.anyString());
+        Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
+
+        Mockito.verify(jwtService, Mockito.never()).generateToken(Mockito.anyString(), Mockito.anySet(), Mockito.anyLong());
     }
-
     @Test
     void changeEmail_InvalidPassword() throws Exception {
-        // 1. Arrange
         User user = new User();
         user.setEmail("old@email.com");
         user.setPassword("encoded_password");
@@ -334,16 +349,14 @@ class UserServiceImplTest {
         Mockito.when(userRepository.existsByEmail("new@email.com")).thenReturn(false);
         Mockito.when(passwordEncoder.matches("raw_password", "encoded_password")).thenReturn(false);
 
-        // 2. Act & 3. Assert
         Assertions.assertThrows(InvalidPasswordException.class, () ->
                 userService.changeEmail(requestDto, "old@email.com")
         );
 
         Mockito.verify(userRepository, Mockito.never()).save(Mockito.any(User.class));
-        Mockito.verify(jwtService, Mockito.never()).generateToken(Mockito.anyString());
 
+        Mockito.verify(jwtService, Mockito.never()).generateToken(Mockito.anyString(), Mockito.anySet(),Mockito.anyLong());
     }
-
     /*
     * *********************
     * delete user by email
@@ -454,7 +467,7 @@ class UserServiceImplTest {
                 "Youness",
                 "Dalal",
                 Gender.MALE,
-                com.dalal.identityservicepfe.enums.AccountStatus.ACTIVE, // هادي نخليوها حيت كاين فرق بينها وبين AccountStatus د spring security
+                com.dalal.identityservicepfe.enums.AccountStatus.ACTIVE,
                 Set.of(RoleName.ROLE_ADMIN)
         );
 

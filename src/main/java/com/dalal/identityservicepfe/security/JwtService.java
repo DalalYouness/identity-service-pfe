@@ -1,5 +1,6 @@
 package com.dalal.identityservicepfe.security;
 
+import com.dalal.identityservicepfe.entities.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -13,7 +14,10 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtService {
@@ -27,13 +31,19 @@ public class JwtService {
     @Value("${jwt.expiration}")
     private String jwtExpiration;
 
-    public String generateToken(String subject) throws Exception {
+
+    public String generateToken(String subject, Set<Role> roles, Long id) throws Exception {
         Long expiration = Long.parseLong(jwtExpiration);
+        Set<String> rolesNames = roles.stream()
+                .map(role -> role.getRoleName().name())
+                .collect(Collectors.toSet());
         return Jwts.builder()
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setSubject(subject)
-                .signWith(getPrivateKeyFromString(), SignatureAlgorithm.RS256) // 👈 تأكد من استخدام RS256
+                .claim("roles", rolesNames)
+                .claim("id",id)
+                .signWith(getPrivateKeyFromString(), SignatureAlgorithm.RS256)
                 .compact();
     }
 
@@ -49,11 +59,12 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    // we dont have to use it
     public boolean isTokenValid(String token, String userEmail) throws Exception {
         final String username = extractUsername(token);
         return (username.equals(userEmail) && !isTokenExpired(token));
     }
-
+    // the same thing as the methode above
     private boolean isTokenExpired(String token) throws Exception {
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }

@@ -303,7 +303,8 @@ public class UserControllerIntegrationTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()));
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(Matchers.notNullValue()))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value(Matchers.notNullValue()));
     }
 
     @Test
