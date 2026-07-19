@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 // we used that config because spring security even if the user is not authenticated , he returns 403 instead of 401
                 .exceptionHandling(exception -> exception
-
+                        // va lancer le 401 au cas si la requette sans token
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED); // 401
                             response.setContentType("application/json");

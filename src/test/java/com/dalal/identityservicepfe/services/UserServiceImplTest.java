@@ -154,7 +154,7 @@ class UserServiceImplTest {
                 .thenReturn(mockAuthentication);
 
         Mockito.when(mockAuthentication.getPrincipal()).thenReturn(mockUser);
-        Mockito.when(jwtService.generateToken(mockUser.getEmail(), Mockito.anySet(),Mockito.anyLong())).thenReturn("my-token");
+        Mockito.when(jwtService.generateToken(Mockito.anyString(), Mockito.anySet(),Mockito.anyLong())).thenReturn("my-token");
 
         var loginResponse = userService.login(loginRequestDto);
 

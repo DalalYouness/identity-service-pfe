@@ -3,7 +3,7 @@ package com.dalal.identityservicepfe.handler;
 import com.dalal.identityservicepfe.exceptions.EmailAlreadyExistsException;
 import com.dalal.identityservicepfe.exceptions.InvalidPasswordException;
 import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;

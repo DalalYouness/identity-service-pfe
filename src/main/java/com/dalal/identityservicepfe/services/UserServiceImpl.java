@@ -133,7 +133,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userRepository.existsByEmail(changeEmailRequestDto.newEmail())) {
-            throw new EmailAlreadyExistsException("Veuillez saisir une adresse email valide et disponible.");
+            throw new EmailAlreadyExistsException("C'est déjà votre adresse email actuelle.");
         }
 
         if (!passwordEncoder.matches(changeEmailRequestDto.currentPassword(), user.getPassword())) {
