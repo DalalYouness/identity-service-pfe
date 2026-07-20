@@ -21,6 +21,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
+    // logout
     @Override
     public void logOutByRefreshToken(User user) {
         if (!userRepository.existsById(user.getId())) {
@@ -29,6 +30,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         refreshTokenRepository.deleteByUser(user);
     }
 
+    // for login and register
     @Override
     public RefreshToken createRefreshToken(User user) {
 
@@ -42,5 +44,15 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .build();
 
         return refreshTokenRepository.save(refreshToken);
+    }
+
+    @Override
+    public RefreshToken verifyExpiration(RefreshToken token) {
+
+        if (token.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepository.delete(token);
+            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+        }
+        return token;
     }
 }

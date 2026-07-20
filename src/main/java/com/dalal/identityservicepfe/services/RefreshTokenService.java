@@ -6,4 +6,5 @@ import com.dalal.identityservicepfe.entities.User;
 public interface RefreshTokenService {
     void logOutByRefreshToken(User user);
     RefreshToken createRefreshToken(User user);
+    RefreshToken verifyExpiration(RefreshToken token);
 }
