@@ -25,10 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -81,13 +78,15 @@ public class UserServiceImpl implements UserService {
         //generate token
         String token = jwtService.generateToken(user.getEmail(),user.getRoles(),user.getId());
 
+        // 2. Returning the updated AuthResponseDto with activeMode
         return new AuthResponseDto(
                 token,
                 user.getEmail(),
                 fullName,
-                fullName + " enregistré avec succès.",
+                "Connexion réussie avec succès.",
                 user.getRoles(),
-                expiresIn
+                expiresIn,
+                "CLIENT"
         );
     }
 
@@ -99,7 +98,22 @@ public class UserServiceImpl implements UserService {
         System.out.println("generated token in login : " + jwtToken);
 
         String fullName = user.getFullName();
-        return new AuthResponseDto(jwtToken, user.getEmail(), fullName, "Connexion réussie avec succès.", user.getRoles(), expiresIn);
+        // 1. Fetching the profile to derive activeMode using getActiveMode() Polymorphism
+        Profil profil = profilRepository.findProfilByUser(user)
+                .orElseThrow(() -> new UserNotFoundException("Profil introuvable pour cet utilisateur."));
+
+        String activeMode = profil.getActiveMode(); // Returns "CLIENT" or "PRESTATAIRE" dynamically
+
+        // 2. Returning the updated AuthResponseDto with activeMode
+        return new AuthResponseDto(
+                jwtToken,
+                user.getEmail(),
+                fullName,
+                "Connexion réussie avec succès.",
+                user.getRoles(),
+                expiresIn,
+                activeMode
+        );
     }
 
     @Override
@@ -133,7 +147,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userRepository.existsByEmail(changeEmailRequestDto.newEmail())) {
-            throw new EmailAlreadyExistsException("C'est déjà votre adresse email actuelle.");
+            throw new EmailAlreadyExistsException("Cet adresse email est déjà utilisée.");
         }
 
         if (!passwordEncoder.matches(changeEmailRequestDto.currentPassword(), user.getPassword())) {
@@ -269,10 +283,16 @@ public class UserServiceImpl implements UserService {
         profil.setCity(dto.city());
         profil.setCountry(dto.country());
 
+        User user = profil.getUser();
+        if (user != null) {
+            user.setFullName(dto.firstName() + " " + dto.lastName());
+            userRepository.save(user);
+        }
+
         if (profil instanceof PrestataireProfil prestataireProfil) {
 
             prestataireProfil.setInterventionArea(dto.interventionArea());
-
+            prestataireProfil.setBio(dto.bio());
             PrestataireProfil updated = profilRepository.save(prestataireProfil);
 
             return userMapper.toUserProfileDto(updated);
@@ -305,7 +325,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional // 🌟 ضَرُورِي تْكُون كَايْنَة هْنَا
     public BecomePrestataireRespDto becomePrestataire(String email, BecomePrestataireDto becomePrestataireDto) throws Exception {
 
         Profil oldProfil = profilRepository.findByUserEmail(email)
@@ -326,7 +345,7 @@ public class UserServiceImpl implements UserService {
             throw new RoleNotFoundException("Le rôle PRESTATAIRE est introuvable.");
         }
 
-        user.getRoles().clear();
+
         user.getRoles().add(role);
         userRepository.save(user);
 
@@ -335,9 +354,9 @@ public class UserServiceImpl implements UserService {
                 becomePrestataireDto.interventionArea()
         );
         String token = jwtService.generateToken(user.getEmail(),user.getRoles(),user.getId());
-        BecomePrestataireRespDto becomePrestataireRespDto = new BecomePrestataireRespDto("Félicitations ! Vous êtes maintenant un prestataire.",
-                token);
-        return becomePrestataireRespDto;
+        Set<RoleName> roleNames = user.getRoles().stream().map(Role::getRoleName).collect(Collectors.toSet());
+        return new BecomePrestataireRespDto("Félicitations ! Vous êtes maintenant un prestataire.",
+                token,roleNames);
     }
 
     @Override
@@ -358,12 +377,150 @@ public class UserServiceImpl implements UserService {
             throw new RoleNotFoundException("Le rôle CLIENT est introuvable.");
         }
 
-        user.getRoles().clear();
-        user.getRoles().add(role);
-        userRepository.save(user);
+        //user.getRoles().clear();
+        //user.getRoles().add(role);
+        //userRepository.save(user);
 
         profilRepository.convertToClientNative(oldProfil.getId());
+        // REMINDER: La transaction se termine ici, le Persistence Context (L1 Cache) est nettoyé automatiquement.
+        // Les requêtes suivantes liront le nouveau DTYPE "CLIENT" depuis la DB sans conflit Hibernate.
     }
+
+    @Override
+    public void switchToProvider(String email) {
+        Profil oldProfil = profilRepository.findByUserEmail(email)
+                .orElseThrow(() ->
+                        new UserNotFoundException("Utilisateur non trouvé."));
+
+        if (oldProfil instanceof PrestataireProfil || oldProfil instanceof AdminProfil) {
+            throw new IllegalArgumentException("Vous n'êtes pas un client pour pouvoir switcher en mode prestataire.");
+        }
+
+        User user = oldProfil.getUser();
+
+        Role role = roleRepository.findByRoleName(RoleName.ROLE_PRESTATAIRE);
+        if (role == null) {
+            throw new RoleNotFoundException("Le rôle PRESTATAIRE est introuvable.");
+        }
+        profilRepository.convertToPrestataireNative(oldProfil.getId());
+        // REMINDER: La transaction se termine ici, le Persistence Context (L1 Cache) est nettoyé automatiquement.
+    }
+
+    // done hmd
+    @Override
+    public List<PrestatairePublicDetailDto> getPrestatairesPublicProfilesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // 1. Fetching all profiles in ONE single SQL query
+        List<Profil> profils = profilRepository.findAllById(ids);
+
+        // 2. Direct mapping to DTOs without casting or aggressive type checking
+        return profils.stream()
+                .map(userMapper::toPrestatairePublicDetailDto)
+                .toList();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //    @Override
 //    public List<UserProfileMinDto> getProfilesByRole(String roleStr) {

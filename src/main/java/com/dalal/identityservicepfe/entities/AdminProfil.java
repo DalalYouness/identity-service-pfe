@@ -10,5 +10,9 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 public class AdminProfil extends Profil {
+    @Override
+    public String getActiveMode() {
+        return "ADMIN";
+    }
 }
 //done Alhamdulilah 👌

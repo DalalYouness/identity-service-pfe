@@ -12,5 +12,9 @@ import lombok.*;
 @NoArgsConstructor
 public class ClientProfil extends Profil {
 
+    @Override
+    public String getActiveMode() {
+        return "CLIENT";
+    }
 }
 //done Alhamdulilah 👌

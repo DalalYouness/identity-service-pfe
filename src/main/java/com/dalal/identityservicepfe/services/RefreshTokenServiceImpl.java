@@ -2,10 +2,10 @@ package com.dalal.identityservicepfe.services;
 
 import com.dalal.identityservicepfe.entities.RefreshToken;
 import com.dalal.identityservicepfe.entities.User;
+import com.dalal.identityservicepfe.exceptions.TokenRefreshException;
 import com.dalal.identityservicepfe.exceptions.UserNotFoundException;
 import com.dalal.identityservicepfe.repositories.RefreshTokenRepository;
 import com.dalal.identityservicepfe.repositories.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,12 +46,13 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return refreshTokenRepository.save(refreshToken);
     }
 
+    // vérification si le refresh token est toujours valable
     @Override
     public RefreshToken verifyExpiration(RefreshToken token) {
 
         if (token.getExpiryDate().isBefore(Instant.now())) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("Refresh token was expired. Please make a new signin request");
+            throw new TokenRefreshException("Refresh token est expiré");
         }
         return token;
     }

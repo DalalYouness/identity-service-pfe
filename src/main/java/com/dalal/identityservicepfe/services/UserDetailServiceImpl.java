@@ -11,7 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+//@Transactional(readOnly = true)
+
 public class UserDetailServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;

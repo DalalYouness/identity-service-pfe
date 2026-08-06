@@ -2,6 +2,7 @@ package com.dalal.identityservicepfe.repositories;
 
 import com.dalal.identityservicepfe.entities.PrestataireProfil;
 import com.dalal.identityservicepfe.entities.Profil;
+import com.dalal.identityservicepfe.entities.User;
 import com.dalal.identityservicepfe.enums.RoleName;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,10 +28,14 @@ public interface ProfilRepository extends JpaRepository<Profil, Long> {
     void convertToPrestataireNative(@Param("id") Long id, @Param("interventionArea") String interventionArea);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "UPDATE profils SET type_profil = 'PRESTATAIRE',updated_at = NOW() WHERE id = :id", nativeQuery = true)
+    void convertToPrestataireNative(@Param("id") Long id);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(value = "UPDATE profils SET type_profil = 'CLIENT', updated_at = NOW() WHERE id = :id", nativeQuery = true)
     void convertToClientNative(@Param("id") Long id);
 
     @Query("SELECT p FROM Profil p JOIN p.user u JOIN u.roles r WHERE r.roleName = :roleName")
     List<Profil> findAllByRoleName(@Param("roleName") RoleName roleName);
-
+    Optional<Profil> findProfilByUser(User user);
 }

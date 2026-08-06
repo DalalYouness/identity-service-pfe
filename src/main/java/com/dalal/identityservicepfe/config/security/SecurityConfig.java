@@ -39,7 +39,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.formLogin(AbstractHttpConfigurer::disable)
                 // Integrate our custom CORS configuration into the Spring Security filter chain o dayza 3wachr 😎
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -83,30 +83,6 @@ public class SecurityConfig {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-
-        // 1. Allow the frontend application origin
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-
-        // 2. Allow standard HTTP methods, including OPTIONS for preflight requests
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
-        // 3. Allow essential headers, including Authorization for JWT authentication
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
-
-        // 4. Expose the Authorization header so the frontend can read the returned JWT
-        configuration.setExposedHeaders(List.of("Authorization"));
-
-        // 5. Allow credentials (cookies, authorization headers, SSL client certificates)
-        configuration.setAllowCredentials(true);
-
-        // 6. Apply these CORS rules to all endpoints in the system
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
 
 
 //    @Bean

@@ -34,7 +34,7 @@ public class UserController {
         AuthResponseDto response = userService.login(loginRequestDto);
         return ResponseEntity.ok(response);
     }
-
+    /**/
     @PutMapping("/update-password")
     public ResponseEntity<Map<String,String>> updatePassword(@RequestBody @Valid UpdatePwdRequestDto updatePwdRequestDto, @AuthenticationPrincipal UserDetails userDetails) {
         String username = userDetails.getUsername();
@@ -55,7 +55,7 @@ public class UserController {
         userService.deleteAccount(email);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
+    /**/
     @PostMapping("/add-administrator")
     //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AuthResponseDto> addAdministrator(@Valid @RequestBody RegisterRequestDto registerRequestDto) throws Exception {
@@ -63,6 +63,7 @@ public class UserController {
         return new ResponseEntity<>(registerResponseDto, HttpStatus.CREATED);
     }
 
+    /**/
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<UserProfileMinDto>> getAllUsers(
@@ -145,7 +146,19 @@ public class UserController {
         userService.switchToClient(userDetails.getUsername());
 
         return ResponseEntity.ok(
-                Map.of("message", "Vous êtes maintenant un client.")
+                Map.of("message", "Mode client activé.")
+        );
+    }
+    @PostMapping("/switch-to-provider")
+    @PreAuthorize("hasRole('CLIENT')")
+    //n'oublie pas de changer le token par ce que a été changé
+    public ResponseEntity<Map<String, String>> switchToProvider(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        userService.switchToProvider(userDetails.getUsername());
+
+        return ResponseEntity.ok(
+                Map.of("message", "Mode prestataire activé.")
         );
     }
 

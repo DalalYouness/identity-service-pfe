@@ -12,7 +12,8 @@ public record AuthResponseDto(
         String fullName,
         String message,
         Set<Role> roles,
-        String expiresIn
+        String expiresIn,
+        String activeMode
 ) {
 }
 //done Alhamdulilah 👌

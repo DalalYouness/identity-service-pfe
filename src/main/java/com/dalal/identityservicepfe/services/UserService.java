@@ -4,6 +4,7 @@ import com.dalal.identityservicepfe.dtos.*;
 import org.springframework.data.domain.Page;
 
 
+import java.util.List;
 import java.util.Map;
 
 public interface UserService {
@@ -22,5 +23,7 @@ public interface UserService {
     PrestataireAuthResponseDto getPrestataireDetailForClient(Long prestataireId);
     BecomePrestataireRespDto becomePrestataire(String email, BecomePrestataireDto becomePrestataireDto) throws Exception;
     void switchToClient(String email);
+    void switchToProvider(String email);
+    List<PrestatairePublicDetailDto> getPrestatairesPublicProfilesByIds(List<Long> ids);
     //List<UserProfileMinDto> getProfilesByRole(String roleStr);
 }

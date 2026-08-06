@@ -11,4 +11,8 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 public class PrestataireProfil extends Profil {
+    @Override
+    public String getActiveMode() {
+        return "PRESTATAIRE";
+    }
 }

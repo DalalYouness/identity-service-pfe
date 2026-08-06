@@ -69,5 +69,7 @@ public abstract class Profil {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public abstract String getActiveMode();
 }
 //done Alhamdulilah 👌
