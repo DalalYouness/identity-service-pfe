@@ -7,6 +7,7 @@ import java.util.Set;
 
 @Builder
 public record AuthResponseDto(
+        Long id,
         String token,
         String email,
         String fullName,

@@ -80,6 +80,7 @@ public class UserServiceImpl implements UserService {
 
         // 2. Returning the updated AuthResponseDto with activeMode
         return new AuthResponseDto(
+                user.getId(),
                 token,
                 user.getEmail(),
                 fullName,
@@ -106,6 +107,7 @@ public class UserServiceImpl implements UserService {
 
         // 2. Returning the updated AuthResponseDto with activeMode
         return new AuthResponseDto(
+                user.getId(),
                 jwtToken,
                 user.getEmail(),
                 fullName,
@@ -245,12 +247,14 @@ public class UserServiceImpl implements UserService {
     public PrestatairePublicDetailDto getPrestatairePublicWithoutContact(Long id) {
 
         Profil profil = profilRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Prestataire non trouvé"));
+                .orElseThrow(() -> new UserNotFoundException("Prestataire non trouvé"));
 
-        if (!(profil instanceof PrestataireProfil prestataireProfil)) {
-            throw new IllegalArgumentException("Ce profil n'est pas un prestataire");
+        boolean isPrestataire = profil.getUser().getRoles().stream()
+                .anyMatch(role -> role.getRoleName() == RoleName.ROLE_PRESTATAIRE);
+        if (!isPrestataire) {
+            throw new UserNotFoundException("Ce profil n'est pas un prestataire");
         }
-        return userMapper.toPrestatairePublicDetailDto(prestataireProfil);
+        return userMapper.toPrestatairePublicDetailDto(profil);
     }
 
     @Override
@@ -317,10 +321,12 @@ public class UserServiceImpl implements UserService {
         Profil profil = profilRepository.findById(prestataireId).orElseThrow(
                 () -> new UserNotFoundException("Prestataire non trouvé")
         );
-        if (!(profil instanceof PrestataireProfil prestataireProfil)) {
-            throw new IllegalArgumentException("Ce profil n'est pas un prestataire");
+        boolean isPrestataire = profil.getUser().getRoles().stream()
+                .anyMatch(role -> role.getRoleName() == RoleName.ROLE_PRESTATAIRE);
+        if (!isPrestataire) {
+            throw new UserNotFoundException("Ce profil n'est pas un prestataire");
         }
-        return userMapper.toPrestataireAuthDetailDto(prestataireProfil);
+        return userMapper.toPrestataireAuthDetailDto(profil);
 
     }
 
@@ -408,17 +414,31 @@ public class UserServiceImpl implements UserService {
 
     // done hmd
     @Override
-    public List<PrestatairePublicDetailDto> getPrestatairesPublicProfilesByIds(List<Long> ids) {
+    public List<PrestataireMinResponseDto> getPrestatairesPublicProfilesByIds(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
         // 1. Fetching all profiles in ONE single SQL query
         List<Profil> profils = profilRepository.findAllById(ids);
 
-        // 2. Direct mapping to DTOs without casting or aggressive type checking
+        // 2. Direct mapping to DTOs without casting or aggressive type checking because the ids provider sure wil be for providers
+        // ila man b3d ta7t f un cas dyal had l api khasha tsta3ml mosta9ila ghadi nzid search bl id o role ama db makayn lach
+        // mais man b3d les endpoints lmajyin man l2ahsan nsayab api fhala independente onhani rasi
         return profils.stream()
-                .map(userMapper::toPrestatairePublicDetailDto)
+                .map(userMapper::toPrestataireMinDto)
                 .toList();
+    }
+
+
+    /*---------------for booking service or every service who wants data about profil */
+    @Override
+    public ProfilSummaryDto getProfilSummary(Long id) {
+        if(id == null) {
+            throw new IllegalArgumentException("id cannot be null");
+        }
+        return profilRepository.findById(id)
+                .map(userMapper::toProfilSummaryDto)
+                .orElseThrow(() -> new UserNotFoundException("Profil not found with id: " + id));
     }
 
 

@@ -8,7 +8,7 @@ public record PrestataireMinResponseDto(
         String lastName,
         Gender gender,
         String city,
-        String country
-        //image if we want
+        String country,
+        String imgUrl
 ) {
 }

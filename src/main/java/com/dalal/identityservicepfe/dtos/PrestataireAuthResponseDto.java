@@ -11,5 +11,8 @@ public record PrestataireAuthResponseDto(
         String country,
         String address,
         String bio,
-        String interventionArea
+        String phoneNumber,
+        boolean isAvailable,
+        String interventionArea,
+        String imgUrl
 ) {}

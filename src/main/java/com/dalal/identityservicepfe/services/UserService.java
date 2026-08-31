@@ -24,6 +24,7 @@ public interface UserService {
     BecomePrestataireRespDto becomePrestataire(String email, BecomePrestataireDto becomePrestataireDto) throws Exception;
     void switchToClient(String email);
     void switchToProvider(String email);
-    List<PrestatairePublicDetailDto> getPrestatairesPublicProfilesByIds(List<Long> ids);
+    List<PrestataireMinResponseDto> getPrestatairesPublicProfilesByIds(List<Long> ids);
+    ProfilSummaryDto getProfilSummary(Long id);
     //List<UserProfileMinDto> getProfilesByRole(String roleStr);
 }

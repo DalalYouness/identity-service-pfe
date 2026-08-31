@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -115,7 +116,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateAuthenticatedUserProfile(email, dto));
     }
 
-    @GetMapping("/{id}/prestataire-info")
+    @GetMapping("/{id}/private-profil")
     @PreAuthorize("hasRole('CLIENT')")
     public ResponseEntity<PrestataireAuthResponseDto> getPrestataireInfo(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getPrestataireDetailForClient(id));
@@ -140,6 +141,7 @@ public class UserController {
     @PostMapping("/switch-to-client")
     @PreAuthorize("hasRole('PRESTATAIRE')")
     //n'oublie pas de changer le token par ce que a été changé
+    // c'est pas la peine parceque les roles sont les memes
     public ResponseEntity<Map<String, String>> switchToClient(
             @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -151,6 +153,7 @@ public class UserController {
     }
     @PostMapping("/switch-to-provider")
     @PreAuthorize("hasRole('CLIENT')")
+    // c'est pas la peine parceque les roles sont les memes
     //n'oublie pas de changer le token par ce que a été changé
     public ResponseEntity<Map<String, String>> switchToProvider(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -161,6 +164,20 @@ public class UserController {
                 Map.of("message", "Mode prestataire activé.")
         );
     }
+
+    @PostMapping("/public-profils/batch")
+    public ResponseEntity<List<PrestataireMinResponseDto>> getPrestatairesPublicProfilesByIds(@RequestBody List<Long> ids) {
+        List<PrestataireMinResponseDto> prestatairesPublic = userService.getPrestatairesPublicProfilesByIds(ids);
+        return ResponseEntity.ok(prestatairesPublic);
+    }
+
+
+    /*-----------------for other services who want info about profil */
+    @GetMapping("/profil/{id}")
+    public ResponseEntity<ProfilSummaryDto> getProfilSummaryById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getProfilSummary(id));
+    }
+
 
 //    @GetMapping("/admin/users-by-role")
 //    @PreAuthorize("hasRole('ADMIN')")

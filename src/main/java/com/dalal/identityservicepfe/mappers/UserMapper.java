@@ -37,6 +37,7 @@ public interface UserMapper {
     UserProfileResponseDto toUserProfileDto(PrestataireProfil prestataireProfil);
     UserProfileResponseDto toUserProfileDto(AdminProfil adminProfil);
 
-    PrestataireAuthResponseDto toPrestataireAuthDetailDto(PrestataireProfil prestataireProfil);
+    PrestataireAuthResponseDto toPrestataireAuthDetailDto(Profil prestataireProfil);
+    ProfilSummaryDto toProfilSummaryDto(Profil profil);
 }
 

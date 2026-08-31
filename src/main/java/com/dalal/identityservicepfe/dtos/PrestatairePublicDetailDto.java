@@ -10,6 +10,6 @@ public record PrestatairePublicDetailDto(
         String city,
         String country,
         String bio,
-        String interventionArea
-        // we can use the image here
+        String interventionArea,
+        String imgUrl
 ) {}
