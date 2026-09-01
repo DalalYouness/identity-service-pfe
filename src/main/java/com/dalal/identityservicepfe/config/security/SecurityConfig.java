@@ -62,6 +62,7 @@ public class SecurityConfig {
                                 ,"/api/v1/auth/public-profils/batch"
                                 , "/api/v1/auth/*/public-profile"
                                 ,"/api/v1/auth/profil/*"
+                                ,"/api/v1/auth/reset-password"
                                 ,RequestMethod.OPTIONS.name()
                                 )
                         .permitAll()

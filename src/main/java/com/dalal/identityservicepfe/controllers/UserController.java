@@ -43,6 +43,11 @@ public class UserController {
         return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès !"));
     }
 
+    @PutMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDto resetPasswordRequestDto) {
+        userService.resetPassword(resetPasswordRequestDto);
+        return ResponseEntity.noContent().build();
+    }
     @PutMapping("/change-email")
     public ResponseEntity<AuthResponseDto> changeEmail(@RequestBody @Valid ChangeEmailRequestDto  changeEmailRequestDto, @AuthenticationPrincipal UserDetails userDetails) throws Exception {
         String email = userDetails.getUsername(); // the username = email in my case
