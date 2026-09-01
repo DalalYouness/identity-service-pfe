@@ -11,6 +11,7 @@ public interface UserService {
     AuthResponseDto register(RegisterRequestDto registerRequestDto) throws Exception;
     AuthResponseDto login(LoginRequestDto loginRequestDto) throws Exception;
     void updatePassword(UpdatePwdRequestDto updatePwdRequestDto,String email) ;
+    void resetPassword(ResetPasswordRequestDto request);
     AuthResponseDto changeEmail(ChangeEmailRequestDto changeEmailRequestDto, String email) throws Exception;
     void deleteAccount(String email);
     AuthResponseDto addAdministrator(RegisterRequestDto registerRequestDto) throws Exception;
@@ -26,5 +27,6 @@ public interface UserService {
     void switchToProvider(String email);
     List<PrestataireMinResponseDto> getPrestatairesPublicProfilesByIds(List<Long> ids);
     ProfilSummaryDto getProfilSummary(Long id);
+
     //List<UserProfileMinDto> getProfilesByRole(String roleStr);
 }

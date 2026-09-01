@@ -137,6 +137,28 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
+    @Override
+    public void resetPassword(ResetPasswordRequestDto request) {
+        // 1 - Validation Guard Clauses
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null.");
+        }
+
+        if (!request.newPassword().equals(request.confirmationPassword())) {
+            throw new IllegalArgumentException("Le nouveau mot de passe et sa confirmation ne correspondent pas.");
+        }
+
+        // 2 - Business Logic & Domain Checks
+        User user = userRepository.findByEmail(request.email());
+        if (user == null) {
+            throw new UserNotFoundException("Utilisateur non trouvé avec l'email : " + request.email());
+        }
+
+        // 3 - Encrypt & Persist
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
     // TODO:
     // 1. Remove checked exception (throws Exception)
     // 2. Add email verification for email change
