@@ -95,15 +95,31 @@ The application exposes REST endpoints under the base path:
 
 ## Testing
 
-This project includes automated tests using the Spring Boot testing stack. The Maven configuration already includes the required test dependencies for Spring Boot and Spring Security testing.
+The project uses both unit testing and integration testing to validate the application’s business logic, security behavior, and Spring Boot components.
 
-Run the test suite with:
+Testing tools and frameworks include:
+
+- **JUnit 5** for writing and executing tests
+- **Mockito** for creating mocks and isolating units under test
+- **Spring Boot Test** for application-context and integration testing
+- **Spring Security Test** for testing secured endpoints and authentication behavior
+- **MySQL** in the CI environment for integration-test support
+
+Unit tests focus on testing individual services and components in isolation with Mockito mocks. Integration tests verify how application components work together within the Spring Boot context, including database-backed behavior where required.
+
+The test sources are organized under:
+
+```text
+src/test/java/
+```
+
+Run all tests with Maven:
 
 ```bash
 ./mvnw test
 ```
 
-To run the full build and verification pipeline, including compilation and tests:
+To run a clean build, including compilation, unit tests, integration tests, and packaging:
 
 ```bash
 ./mvnw clean package
@@ -114,12 +130,6 @@ On Windows:
 ```bash
 mvnw.cmd test
 mvnw.cmd clean package
-```
-
-The test sources are organized under:
-
-```text
-src/test/java/
 ```
 
 ---
@@ -138,13 +148,13 @@ The pipeline is triggered on pushes to the `master` branch and performs the foll
 2. Sets up Java 21
 3. Starts a MySQL 8 service for integration testing
 4. Disables external config server and discovery dependencies for local CI execution
-5. Runs Maven build and packaging with:
+5. Runs Maven build, unit tests, integration tests, and packaging with:
 
 ```bash
 ./mvnw clean package
 ```
 
-This ensures the project is compiled and validated automatically whenever changes are pushed to the main branch.
+This ensures the project is compiled and automatically validated whenever changes are pushed to the `master` branch.
 
 ---
 
