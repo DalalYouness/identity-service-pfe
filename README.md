@@ -8,7 +8,7 @@ This service is responsible for user authentication, authorization, profile mana
 
 ## Project Overview
 
-The Home Services Platform connects customers with trusted service providers for home-related tasks such as cleaning, maintenance, repair, and personalized services. This repository implements the Identity Service, which acts as the security and account management backbone of the platform.
+The Home Services Platform connects customers with trusted service providers for home-related tasks such as cleaning, maintenance, repair, and personalized services. This repository implements the identity and access layer for that ecosystem.
 
 It handles:
 - User registration
@@ -93,6 +93,61 @@ The application exposes REST endpoints under the base path:
 
 ---
 
+## Testing
+
+This project includes automated tests using the Spring Boot testing stack. The Maven configuration already includes the required test dependencies for Spring Boot and Spring Security testing.
+
+Run the test suite with:
+
+```bash
+./mvnw test
+```
+
+To run the full build and verification pipeline, including compilation and tests:
+
+```bash
+./mvnw clean package
+```
+
+On Windows:
+
+```bash
+mvnw.cmd test
+mvnw.cmd clean package
+```
+
+The test sources are organized under:
+
+```text
+src/test/java/
+```
+
+---
+
+## Continuous Integration
+
+This repository includes a GitHub Actions workflow for CI in:
+
+```text
+.github/workflows/ci.yml
+```
+
+The pipeline is triggered on pushes to the `master` branch and performs the following steps:
+
+1. Checks out the repository source code
+2. Sets up Java 21
+3. Starts a MySQL 8 service for integration testing
+4. Disables external config server and discovery dependencies for local CI execution
+5. Runs Maven build and packaging with:
+
+```bash
+./mvnw clean package
+```
+
+This ensures the project is compiled and validated automatically whenever changes are pushed to the main branch.
+
+---
+
 ## Project Structure
 
 ```text
@@ -118,6 +173,9 @@ identity-service-pfe/
 │   │       ├── application.properties
 │   │       └── db/
 │   └── test/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── .gitignore
 ├── .gitattributes
 ├── mvnw
@@ -291,4 +349,3 @@ This project is intended for academic and portfolio purposes.
 Dalal Youness
 
 Master’s Degree Project - Home Services Platform
-
