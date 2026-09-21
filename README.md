@@ -280,25 +280,9 @@ The goal is to demonstrate:
 
 ---
 
-## Future Improvements
-
-Possible enhancements for this project include:
-- Email verification
-- OTP-based authentication
-- Refresh token support
-- Audit logs for sensitive user actions
-- Advanced validation and rate limiting
-- Swagger/OpenAPI documentation
-- CI/CD pipeline setup
-- Dockerization and container deployment
-
----
-
 ## License
 
 This project is intended for academic and portfolio purposes.
-
-If you plan to publish it publicly, you may choose to add a LICENSE file depending on your university or project requirements.
 
 ---
 
@@ -308,12 +292,3 @@ Dalal Youness
 
 Master’s Degree Project - Home Services Platform
 
----
-
-## Contact
-
-If you want, I can also generate:
-1. a more modern “startup-style” README,
-2. a French version,
-3. a README tailored for GitHub portfolio presentation,
-4. or a version including badges, architecture diagram, and API documentation style.
